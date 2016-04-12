@@ -25,6 +25,8 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import io.relution.jenkins.scmsqs.net.SQSChannel;
+
 
 /**
  * Interface definition for factories that can create {@link SQSQueueMonitor} instances and related
@@ -48,6 +50,13 @@ public interface SQSFactory {
      * to the specified queue.
      */
     AmazonSQSAsync createSQSAsync(final SQSQueue queue);
+
+    /**
+     * Returns a new channel instance that can be used to communicate with the specified queue.
+     * @param queue The {@link SQSQueue} for which to create the channel.
+     * @return A new {@link SQSChannel} for the specified queue.
+     */
+    SQSChannel createChannel(final SQSQueue queue);
 
     /**
      * Returns a new monitor instance that can be used to poll the specified queue for new

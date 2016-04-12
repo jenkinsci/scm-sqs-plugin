@@ -78,6 +78,12 @@ public class SQSFactoryImpl implements SQSFactory {
     }
 
     @Override
+    public SQSChannel createChannel(final SQSQueue queue) {
+        final AmazonSQS sqs = this.createSQS(queue);
+        return new SQSChannelImpl(sqs, queue, this);
+    }
+
+    @Override
     public SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue) {
         return new SQSQueueMonitorImpl(executor, this, queue);
     }
