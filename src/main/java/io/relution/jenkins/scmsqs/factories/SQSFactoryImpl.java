@@ -37,6 +37,8 @@ import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
+import io.relution.jenkins.scmsqs.net.SQSChannel;
+import io.relution.jenkins.scmsqs.net.SQSChannelImpl;
 import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorImpl;
 
 
@@ -85,7 +87,8 @@ public class SQSFactoryImpl implements SQSFactory {
 
     @Override
     public SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue) {
-        return new SQSQueueMonitorImpl(executor, this, queue);
+        final SQSChannel channel = this.createChannel(queue);
+        return new SQSQueueMonitorImpl(executor, channel);
     }
 
     @Override
