@@ -27,7 +27,6 @@ import com.google.inject.Inject;
 
 import java.util.concurrent.ExecutorService;
 
-import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
@@ -39,12 +38,12 @@ import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorImpl;
 
 public class SQSFactoryImpl implements SQSFactory {
 
-    private final ExecutorProvider holder;
-    private final RequestFactory factory;
+    private final ExecutorService executor;
+    private final RequestFactory  factory;
 
     @Inject
-    public SQSFactoryImpl(final ExecutorProvider holder, final RequestFactory factory) {
-        this.holder = holder;
+    public SQSFactoryImpl(final ExecutorService executor, final RequestFactory factory) {
+        this.executor = executor;
         this.factory = factory;
     }
 
@@ -62,9 +61,8 @@ public class SQSFactoryImpl implements SQSFactory {
 
     @Override
     public AmazonSQSAsync createSQSAsync(final SQSQueue queue) {
-        final ExecutorService executorService = this.holder.get();
         final ClientConfiguration clientConfiguration = this.getClientConfiguration(queue);
-        final AmazonSQSAsyncClient sqsAsync = new AmazonSQSAsyncClient(queue, clientConfiguration, executorService);
+        final AmazonSQSAsyncClient sqsAsync = new AmazonSQSAsyncClient(queue, clientConfiguration, this.executor);
 
         if (queue.getEndpoint() != null) {
             sqsAsync.setEndpoint(queue.getEndpoint());
