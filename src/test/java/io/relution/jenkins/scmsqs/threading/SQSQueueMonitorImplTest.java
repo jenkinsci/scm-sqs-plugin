@@ -17,9 +17,11 @@
 package io.relution.jenkins.scmsqs.threading;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -47,6 +49,8 @@ public class SQSQueueMonitorImplTest {
     @Mock
     private SQSQueueListener    listener;
 
+    private SQSQueueMonitor     monitor;
+
     private final List<Message> messages = new ArrayList<>();
 
     @Before
@@ -60,51 +64,32 @@ public class SQSQueueMonitorImplTest {
 
         Mockito.when(this.listener.getQueueUuid()).thenReturn("a");
         Mockito.when(this.channel.getQueueUuid()).thenReturn("a");
+
+        this.monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
     }
 
     @Test
     public void shouldThrowIfRegisterNullListener() {
-        final SQSQueueMonitor monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
-        Throwable thrown = null;
+        assertThatThrownBy(new ThrowingCallable() {
 
-        try {
-            monitor.add(null);
-        } catch (final Throwable t) {
-            thrown = t;
-        }
+            @Override
+            public void call() throws Throwable {
+                SQSQueueMonitorImplTest.this.monitor.add(null);
+            }
 
-        assertThat(thrown).isNotNull();
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldNotThrowIfUnregisterNullListener() {
-        final SQSQueueMonitor monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
-        Throwable thrown = null;
-
-        try {
-            assertThat(monitor.remove(null)).isFalse();
-        } catch (final Throwable t) {
-            thrown = t;
-        }
-
-        assertThat(thrown).isNull();
-        assertThat(monitor.isShutDown()).isFalse();
+        assertThat(this.monitor.remove(null)).isFalse();
+        assertThat(this.monitor.isShutDown()).isFalse();
     }
 
     @Test
     public void shouldNotThrowIfUnregisterUnknown() {
-        final SQSQueueMonitor monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
-        Throwable thrown = null;
-
-        try {
-            assertThat(monitor.remove(this.listener)).isFalse();
-        } catch (final Throwable t) {
-            thrown = t;
-        }
-
-        assertThat(thrown).isNull();
-        assertThat(monitor.isShutDown()).isFalse();
+        assertThat(this.monitor.remove(this.listener)).isFalse();
+        assertThat(this.monitor.isShutDown()).isFalse();
     }
 
     @Test
