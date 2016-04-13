@@ -38,6 +38,9 @@ public class SQSChannelImpl implements SQSChannel {
     private final SQSQueue   queue;
     private final SQSFactory factory;
 
+    /**
+     * Number of requests that were sent (for logging)
+     */
     private int              requestCount;
 
     public SQSChannelImpl(final AmazonSQS sqs, final SQSQueue queue, final SQSFactory factory) {
@@ -53,8 +56,7 @@ public class SQSChannelImpl implements SQSChannel {
     @Override
     public List<Message> getMessages() {
         try {
-            this.requestCount++;
-            Log.fine("Send receive message request #%d for %s", this.requestCount, this.queue);
+            this.logRequestCount();
 
             final ReceiveMessageRequest request = this.factory.createReceiveMessageRequest(this.queue);
             final ReceiveMessageResult result = this.sqs.receiveMessage(request);
@@ -97,6 +99,11 @@ public class SQSChannelImpl implements SQSChannel {
     @Override
     public String toString() {
         return this.queue.toString();
+    }
+
+    private void logRequestCount() {
+        this.requestCount++;
+        Log.fine("Send receive message request #%d for %s", this.requestCount, this.queue);
     }
 
     private DeleteMessageBatchResult deleteMessageBatch(final List<Message> messages) {
