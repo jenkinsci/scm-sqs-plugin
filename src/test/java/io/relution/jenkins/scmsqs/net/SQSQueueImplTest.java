@@ -45,67 +45,54 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 public class SQSQueueImplTest {
 
     @Mock
-    private SQSFactory                factory;
+    private SQSFactory          factory;
 
     @Mock
-    private AmazonSQSAsync            sqs;
+    private AmazonSQSAsync      sqs;
 
     @Mock
-    private SQSQueue                  queue;
+    private SQSQueue            queue;
 
-    @Mock
-    private ReceiveMessageRequest     receiveRequest;
+    private SQSChannel          channel;
 
-    @Mock
-    private ReceiveMessageResult      receiveResult;
-
-    @Mock
-    private DeleteMessageBatchRequest deleteRequest;
-
-    @Mock
-    private DeleteMessageBatchResult  deleteResult;
-
-    private final List<Message>       messages = new ArrayList<>();
+    private final List<Message> messages = Collections.singletonList(new Message());
 
     @Before
     public void init() {
         MockitoAnnotations.initMocks(this);
 
         Mockito.when(this.factory.createSQS(Matchers.any(SQSQueue.class))).thenReturn(this.sqs);
-        Mockito.when(this.factory.createSQSAsync(Matchers.any(SQSQueue.class))).thenReturn(this.sqs);
-        Mockito.when(this.factory.createReceiveMessageRequest(this.queue)).thenReturn(this.receiveRequest);
-        Mockito.when(this.factory.createDeleteMessageBatchRequest(this.queue, this.messages)).thenReturn(this.deleteRequest);
 
-        final Message message = new Message();
-        this.messages.add(message);
-
-        Mockito.when(this.sqs.receiveMessage(this.receiveRequest)).thenReturn(this.receiveResult);
-        Mockito.when(this.sqs.deleteMessageBatch(this.deleteRequest)).thenReturn(this.deleteResult);
-
-        Mockito.when(this.receiveResult.getMessages()).thenReturn(this.messages);
-
-        final List<DeleteMessageBatchResultEntry> result = Collections.emptyList();
-        final List<BatchResultErrorEntry> errors = Collections.emptyList();
-        Mockito.when(this.deleteResult.getSuccessful()).thenReturn(result);
-        Mockito.when(this.deleteResult.getFailed()).thenReturn(errors);
+        this.channel = new SQSChannelImpl(this.sqs, this.queue, this.factory);
     }
 
     @Test
     public void shouldReturnMessages() {
-        final SQSChannel channel = new SQSChannelImpl(this.sqs, this.queue, this.factory);
+        final ReceiveMessageRequest request = Mockito.mock(ReceiveMessageRequest.class);
+        final ReceiveMessageResult result = Mockito.mock(ReceiveMessageResult.class);
 
-        final List<Message> messages = channel.getMessages();
+        Mockito.when(this.factory.createReceiveMessageRequest(this.queue)).thenReturn(request);
+        Mockito.when(this.sqs.receiveMessage(request)).thenReturn(result);
+        Mockito.when(result.getMessages()).thenReturn(this.messages);
+
+        final List<Message> messages = this.channel.getMessages();
 
         assertThat(messages).isSameAs(this.messages);
     }
 
     @Test
     public void shouldDeleteMessages() {
-        final SQSChannel channel = new SQSChannelImpl(this.sqs, this.queue, this.factory);
+        final DeleteMessageBatchRequest request = Mockito.mock(DeleteMessageBatchRequest.class);
+        final DeleteMessageBatchResult result = Mockito.mock(DeleteMessageBatchResult.class);
 
-        channel.deleteMessages(this.messages);
+        Mockito.when(this.factory.createDeleteMessageBatchRequest(this.queue, this.messages)).thenReturn(request);
+        Mockito.when(this.sqs.deleteMessageBatch(request)).thenReturn(result);
+        Mockito.when(result.getSuccessful()).thenReturn(new ArrayList<DeleteMessageBatchResultEntry>());
+        Mockito.when(result.getFailed()).thenReturn(new ArrayList<BatchResultErrorEntry>());
+
+        this.channel.deleteMessages(this.messages);
 
         Mockito.verify(this.factory).createDeleteMessageBatchRequest(this.queue, this.messages);
-        Mockito.verify(this.sqs).deleteMessageBatch(this.deleteRequest);
+        Mockito.verify(this.sqs).deleteMessageBatch(request);
     }
 }
