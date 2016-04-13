@@ -62,7 +62,7 @@ public class SQSFactoryImpl implements SQSFactory {
 
     @Override
     public AmazonSQSAsync createSQSAsync(final SQSQueue queue) {
-        final ExecutorService executorService = this.holder.getExecutorService();
+        final ExecutorService executorService = this.holder.get();
         final ClientConfiguration clientConfiguration = this.getClientConfiguration(queue);
         final AmazonSQSAsyncClient sqsAsync = new AmazonSQSAsyncClient(queue, clientConfiguration, executorService);
 

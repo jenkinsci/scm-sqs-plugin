@@ -45,7 +45,7 @@ public class ExecutorHolderImpl implements ExecutorHolder {
     }
 
     @Override
-    public ExecutorService getExecutorService() {
+    public ExecutorService get() {
         return this.executor;
     }
 }

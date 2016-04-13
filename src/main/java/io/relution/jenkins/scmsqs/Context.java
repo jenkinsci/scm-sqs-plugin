@@ -19,6 +19,7 @@ package io.relution.jenkins.scmsqs;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import hudson.Extension;
@@ -64,6 +65,10 @@ public class Context extends com.google.inject.AbstractModule {
 
         this.bind(ExecutorHolder.class)
                 .to(ExecutorHolderImpl.class)
+                .in(com.google.inject.Singleton.class);
+
+        this.bind(ExecutorService.class)
+                .toProvider(ExecutorHolder.class)
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSFactory.class)

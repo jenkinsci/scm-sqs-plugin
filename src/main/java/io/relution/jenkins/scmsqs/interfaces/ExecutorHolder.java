@@ -16,13 +16,15 @@
 
 package io.relution.jenkins.scmsqs.interfaces;
 
+import com.google.inject.Provider;
+
 import java.util.concurrent.ExecutorService;
 
 
 /**
  * Interface definition for classes that provide access to an {@link ExecutorService} instance.
  */
-public interface ExecutorHolder {
+public interface ExecutorHolder extends Provider<ExecutorService> {
 
     /**
      * Returns the core number of threads.
@@ -41,10 +43,4 @@ public interface ExecutorHolder {
      * @see #getCorePoolSize()
      */
     void setCorePoolSize(int corePoolSize) throws IllegalArgumentException;
-
-    /**
-     * Returns the {@link ExecutorService} that is held by this instance.
-     * @return The {@link ExecutorService} held by this instance.
-     */
-    ExecutorService getExecutorService();
 }

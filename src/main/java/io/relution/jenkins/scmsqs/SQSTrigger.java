@@ -176,7 +176,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     private void execute() {
         Log.info("SQS event triggered build of %s", this.job.getFullDisplayName());
-        final ExecutorService service = this.executorHolder.getExecutorService();
+        final ExecutorService service = this.executorHolder.get();
         service.execute(this);
     }
 

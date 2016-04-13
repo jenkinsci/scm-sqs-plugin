@@ -43,7 +43,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
 
     @Inject
     public SQSQueueMonitorSchedulerImpl(final ExecutorHolder holder, final SQSQueueProvider provider, final SQSFactory factory) {
-        this.executor = holder.getExecutorService();
+        this.executor = holder.get();
         this.provider = provider;
         this.factory = factory;
     }
