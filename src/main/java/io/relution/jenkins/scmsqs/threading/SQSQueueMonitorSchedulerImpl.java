@@ -19,7 +19,9 @@ package io.relution.jenkins.scmsqs.threading;
 import com.google.inject.Inject;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
@@ -94,9 +96,11 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
 
     @Override
     public void onConfigurationChanged() {
-        for (final String uuid : this.monitors.keySet()) {
-            final SQSQueueMonitor monitor = this.monitors.get(uuid);
-            this.reconfigure(uuid, monitor);
+        final Iterator<Entry<String, SQSQueueMonitor>> entries = this.monitors.entrySet().iterator();
+
+        while (entries.hasNext()) {
+            final Entry<String, SQSQueueMonitor> entry = entries.next();
+            this.reconfigure(entries, entry);
         }
     }
 
@@ -113,13 +117,15 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         monitor.add(listener);
     }
 
-    private void reconfigure(final String uuid, final SQSQueueMonitor monitor) {
+    private void reconfigure(final Iterator<Entry<String, SQSQueueMonitor>> entries, final Entry<String, SQSQueueMonitor> entry) {
+        final String uuid = entry.getKey();
+        final SQSQueueMonitor monitor = entry.getValue();
         final SQSQueue queue = this.provider.getSqsQueue(uuid);
 
         if (queue == null) {
             Log.info("Queue {%s} removed, shut down monitor", uuid);
-            this.monitors.remove(uuid);
             monitor.shutDown();
+            entries.remove();
 
         } else if (monitor.isShutDown()) {
             Log.info("Monitor for queue {%s} is shut down, restart", uuid);
