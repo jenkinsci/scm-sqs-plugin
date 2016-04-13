@@ -18,7 +18,7 @@ package io.relution.jenkins.scmsqs.net;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.amazonaws.services.sqs.AmazonSQSAsync;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchResult;
@@ -29,7 +29,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -38,17 +37,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 
 
 public class SQSQueueImplTest {
 
     @Mock
-    private SQSFactory          factory;
+    private RequestFactory      factory;
 
     @Mock
-    private AmazonSQSAsync      sqs;
+    private AmazonSQS           sqs;
 
     @Mock
     private SQSQueue            queue;
@@ -60,8 +58,6 @@ public class SQSQueueImplTest {
     @Before
     public void init() {
         MockitoAnnotations.initMocks(this);
-
-        Mockito.when(this.factory.createSQS(Matchers.any(SQSQueue.class))).thenReturn(this.sqs);
 
         this.channel = new SQSChannelImpl(this.sqs, this.queue, this.factory);
     }

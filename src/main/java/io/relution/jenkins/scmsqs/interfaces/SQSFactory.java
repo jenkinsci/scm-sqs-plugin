@@ -18,11 +18,7 @@ package io.relution.jenkins.scmsqs.interfaces;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import io.relution.jenkins.scmsqs.net.SQSChannel;
@@ -66,25 +62,4 @@ public interface SQSFactory {
      * @return A new {@link SQSQueueMonitor} instance suitable for monitoring the specified queue.
      */
     SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue);
-
-    /**
-     * Returns a new request that can be used to receive messages from the specified queue.
-     * @param queue The {@link SQSQueue} for which to create the request.
-     * @return A {@link ReceiveMessageRequest} that can be used to request messages from the
-     * specified queue.
-     */
-    ReceiveMessageRequest createReceiveMessageRequest(final SQSQueue queue);
-
-    /**
-     * Returns a new request that can be used to delete previously received messages from the
-     * specified queue.
-     * <p>
-     * The specified messages must have been received by a previous receive message request to
-     * the same queue.
-     * @param queue The {@link SQSQueue} from which to delete the specified messages.
-     * @param messages The collection of {@link Message}s to delete.
-     * @return A {@link DeleteMessageBatchRequest} that can be used to delete messages from the
-     * specified queue.
-     */
-    DeleteMessageBatchRequest createDeleteMessageBatchRequest(final SQSQueue queue, final List<Message> messages);
 }

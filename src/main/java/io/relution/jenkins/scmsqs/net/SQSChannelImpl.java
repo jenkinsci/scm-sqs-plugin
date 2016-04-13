@@ -26,7 +26,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import java.util.Collections;
 import java.util.List;
 
-import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.logging.Log;
 import io.relution.jenkins.scmsqs.util.ThrowIf;
@@ -34,16 +33,16 @@ import io.relution.jenkins.scmsqs.util.ThrowIf;
 
 public class SQSChannelImpl implements SQSChannel {
 
-    private final AmazonSQS  sqs;
-    private final SQSQueue   queue;
-    private final SQSFactory factory;
+    private final AmazonSQS      sqs;
+    private final SQSQueue       queue;
+    private final RequestFactory factory;
 
     /**
      * Number of requests that were sent (for logging)
      */
-    private int              requestCount;
+    private int                  requestCount;
 
-    public SQSChannelImpl(final AmazonSQS sqs, final SQSQueue queue, final SQSFactory factory) {
+    public SQSChannelImpl(final AmazonSQS sqs, final SQSQueue queue, final RequestFactory factory) {
         ThrowIf.isNull(sqs, "sqs");
         ThrowIf.isNull(queue, "queue");
         ThrowIf.isNull(factory, "factory");
