@@ -103,31 +103,60 @@ public class SQSQueueMonitorImplTest {
             public void call() throws Throwable {
                 SQSQueueMonitorImplTest.this.monitor.add(SQSQueueMonitorImplTest.this.listener);
             }
+
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldStartAndStop() {
-        assertThat(this.monitor.add(this.listener)).isTrue();
+    public void shouldStartMonitorForFirstListener() {
+        final boolean result = this.monitor.add(this.listener);
+
+        assertThat(result).isTrue();
         Mockito.verify(this.executor).execute(this.monitor);
         assertThat(this.monitor.isShutDown()).isFalse();
+    }
 
-        assertThat(this.monitor.add(this.listener)).isFalse();
+    @Test
+    public void shouldNotStartMultipleTimesForMultipleListeners() {
+        this.monitor.add(this.listener);
+
+        final boolean result = this.monitor.add(this.listener);
+
+        assertThat(result).isFalse();
+        Mockito.verify(this.executor).execute(this.monitor);
+        assertThat(this.monitor.isShutDown()).isFalse();
+    }
+
+    @Test
+    public void shouldNotStopBeforeLastListenerRemoved() {
+        this.monitor.add(this.listener);
+        this.monitor.add(this.listener);
+        Mockito.verify(this.executor).execute(this.monitor);
+
+        final boolean result = this.monitor.remove(this.listener);
+
+        assertThat(result).isFalse();
         Mockito.verifyNoMoreInteractions(this.executor);
         assertThat(this.monitor.isShutDown()).isFalse();
+    }
 
-        assertThat(this.monitor.remove(this.listener)).isFalse();
-        Mockito.verifyNoMoreInteractions(this.executor);
-        assertThat(this.monitor.isShutDown()).isFalse();
+    @Test
+    public void shouldStopIfLastListenerRemoved() {
+        this.monitor.add(this.listener);
+        this.monitor.add(this.listener);
+        this.monitor.remove(this.listener);
+        Mockito.verify(this.executor).execute(this.monitor);
 
-        assertThat(this.monitor.remove(this.listener)).isTrue();
+        final boolean result = this.monitor.remove(this.listener);
+
+        assertThat(result).isTrue();
         Mockito.verifyNoMoreInteractions(this.executor);
         assertThat(this.monitor.isShutDown()).isTrue();
     }
 
     @Test
     public void shouldQueryQueue() {
-        assertThat(this.monitor.add(this.listener)).isTrue();
+        this.monitor.add(this.listener);
         Mockito.verify(this.channel).getQueueUuid();
         Mockito.verify(this.listener).getQueueUuid();
         Mockito.verify(this.executor).execute(this.monitor);
@@ -135,13 +164,10 @@ public class SQSQueueMonitorImplTest {
         this.monitor.run();
 
         Mockito.verify(this.channel).getMessages();
-
         Mockito.verify(this.listener).handleMessages(this.messages);
         Mockito.verifyNoMoreInteractions(this.listener);
-
         Mockito.verify(this.channel).deleteMessages(this.messages);
         Mockito.verifyNoMoreInteractions(this.channel);
-
         Mockito.verify(this.executor, Mockito.times(2)).execute(this.monitor);
     }
 
@@ -149,7 +175,6 @@ public class SQSQueueMonitorImplTest {
     public void shouldNotSendDeleteRequestIfResultIsEmpty() {
         final List<Message> messages = Collections.emptyList();
         Mockito.when(this.channel.getMessages()).thenReturn(messages);
-
         assertThat(this.monitor.add(this.listener)).isTrue();
         Mockito.verify(this.channel).getQueueUuid();
         Mockito.verify(this.listener).getQueueUuid();
@@ -158,16 +183,14 @@ public class SQSQueueMonitorImplTest {
         this.monitor.run();
 
         Mockito.verify(this.channel).getMessages();
-
         Mockito.verifyNoMoreInteractions(this.listener);
         Mockito.verifyNoMoreInteractions(this.channel);
-
         Mockito.verify(this.executor, Mockito.times(2)).execute(this.monitor);
     }
 
     @Test
     public void shouldNotRunIfAlreadyShutDown() {
-        assertThat(this.monitor.add(this.listener)).isTrue();
+        this.monitor.add(this.listener);
         Mockito.verify(this.channel).getQueueUuid();
         Mockito.verify(this.listener).getQueueUuid();
         Mockito.verify(this.executor).execute(this.monitor);
@@ -176,10 +199,8 @@ public class SQSQueueMonitorImplTest {
         this.monitor.run();
 
         assertThat(this.monitor.isShutDown()).isTrue();
-
         Mockito.verifyNoMoreInteractions(this.channel);
         Mockito.verifyNoMoreInteractions(this.listener);
-
         Mockito.verifyNoMoreInteractions(this.executor);
     }
 }
