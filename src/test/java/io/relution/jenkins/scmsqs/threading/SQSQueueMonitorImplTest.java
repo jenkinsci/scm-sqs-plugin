@@ -97,17 +97,13 @@ public class SQSQueueMonitorImplTest {
         Mockito.when(this.listener.getQueueUuid()).thenReturn("a");
         Mockito.when(this.channel.getQueueUuid()).thenReturn("b");
 
-        final SQSQueueMonitor monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
-        Throwable thrown = null;
+        assertThatThrownBy(new ThrowingCallable() {
 
-        try {
-            monitor.add(null);
-        } catch (final Throwable t) {
-            thrown = t;
-        }
-
-        assertThat(thrown).isNotNull();
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+            @Override
+            public void call() throws Throwable {
+                SQSQueueMonitorImplTest.this.monitor.add(SQSQueueMonitorImplTest.this.listener);
+            }
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
