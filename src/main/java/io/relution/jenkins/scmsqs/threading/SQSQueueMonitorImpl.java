@@ -16,23 +16,17 @@
 
 package io.relution.jenkins.scmsqs.threading;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchResult;
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
-import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.net.SQSChannel;
 import io.relution.jenkins.scmsqs.util.ThrowIf;
 
 
@@ -41,11 +35,7 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     private final static String          ERROR_WRONG_QUEUE = "The specified listener is associated with another queue.";
 
     private final ExecutorService        executor;
-    private final SQSFactory             factory;
-    private final SQSQueue               queue;
-
-    private int                          requestCount;
-    private AmazonSQS                    client;
+    private final SQSChannel             channel;
 
     private final Object                 listenersLock     = new Object();
     private final List<SQSQueueListener> listeners         = new ArrayList<>();
@@ -53,20 +43,18 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     private final AtomicBoolean          isRunning         = new AtomicBoolean();
     private volatile boolean             isShutDown;
 
-    public SQSQueueMonitorImpl(final ExecutorService executor, final SQSFactory factory, final SQSQueue queue) {
+    public SQSQueueMonitorImpl(final ExecutorService executor, final SQSChannel channel) {
         ThrowIf.isNull(executor, "executor");
-        ThrowIf.isNull(factory, "factory");
-        ThrowIf.isNull(queue, "queue");
+        ThrowIf.isNull(channel, "channel");
 
         this.executor = executor;
-        this.factory = factory;
-        this.queue = queue;
+        this.channel = channel;
     }
 
     @Override
     public boolean add(final SQSQueueListener listener) {
         ThrowIf.isNull(listener, "listener");
-        ThrowIf.notEqual(listener.getQueueUuid(), this.queue.getUuid(), ERROR_WRONG_QUEUE);
+        ThrowIf.notEqual(listener.getQueueUuid(), this.channel.getQueueUuid(), ERROR_WRONG_QUEUE);
 
         synchronized (this.listenersLock) {
             if (this.listeners.add(listener) && this.listeners.size() == 1) {
@@ -101,35 +89,32 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
             }
 
             if (!this.isRunning.compareAndSet(false, true)) {
-                Log.warning("Monitor for %s already started", this.queue);
+                Log.warning("Monitor for %s already started", this.channel);
                 return;
             }
 
-            Log.fine("Start synchronous monitor for %s", this.queue);
+            Log.fine("Start synchronous monitor for %s", this.channel);
             this.processMessages();
-
-            if (!this.isShutDown) {
-                this.executor.execute(this);
-            }
+            this.execute();
 
         } catch (final com.amazonaws.services.sqs.model.QueueDoesNotExistException e) {
-            Log.warning("Queue %s does not exist, monitor stopped", this.queue);
+            Log.warning("Queue %s does not exist, monitor stopped", this.channel);
             this.isShutDown = true;
 
         } catch (final Exception e) {
-            Log.severe(e, "Unknown error, monitor for queue %s stopped", this.queue);
+            Log.severe(e, "Unknown error, monitor for queue %s stopped", this.channel);
             this.isShutDown = true;
 
         } finally {
             if (!this.isRunning.compareAndSet(true, false)) {
-                Log.warning("Monitor for %s already stopped", this.queue);
+                Log.warning("Monitor for %s already stopped", this.channel);
             }
         }
     }
 
     @Override
     public void shutDown() {
-        Log.info("Shut down monitor for %s", this.queue);
+        Log.info("Shut down monitor for %s", this.channel);
         this.isShutDown = true;
     }
 
@@ -139,48 +124,30 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     }
 
     private void execute() {
-        this.client = this.factory.createSQS(this.queue);
-        this.requestCount = 0;
-
-        this.executor.execute(this);
+        if (!this.isShutDown) {
+            this.executor.execute(this);
+        }
     }
 
     private void processMessages() {
-        final ReceiveMessageResult receiveResult = this.receiveMessage();
+        final List<Message> messages = this.channel.getMessages();
 
-        if (this.isShutDown || receiveResult == null) {
+        if (this.isShutDown) {
             return;
         }
 
-        final List<Message> messages = receiveResult.getMessages();
-
         if (this.notifyListeners(messages)) {
-            this.deleteMessages(messages);
+            this.channel.deleteMessages(messages);
         }
-    }
-
-    private ReceiveMessageResult receiveMessage() {
-        try {
-            this.requestCount++;
-            Log.fine("Send receive message request #%d for %s", this.requestCount, this.queue);
-
-            final ReceiveMessageRequest request = this.factory.createReceiveMessageRequest(this.queue);
-            return this.client.receiveMessage(request);
-
-        } catch (final com.amazonaws.AmazonServiceException e) {
-            Log.severe(e, "Failed to send receive message request for %s", this.queue);
-
-        }
-        return null;
     }
 
     private boolean notifyListeners(final List<Message> messages) {
         if (messages.isEmpty()) {
-            Log.fine("Received no messages from %s", this.queue);
+            Log.fine("Received no messages from %s", this.channel);
             return false;
         }
 
-        Log.info("Received %d message(s) from %s", messages.size(), this.queue);
+        Log.info("Received %d message(s) from %s", messages.size(), this.channel);
         final List<SQSQueueListener> listeners = this.getListeners();
 
         for (final SQSQueueListener listener : listeners) {
@@ -188,31 +155,6 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
         }
 
         return true;
-    }
-
-    private void deleteMessages(final List<Message> messages) {
-        final DeleteMessageBatchResult deleteResult = this.deleteMessageBatch(messages);
-
-        if (deleteResult == null) {
-            return;
-        }
-
-        final List<?> failed = deleteResult.getFailed();
-        final List<?> success = deleteResult.getSuccessful();
-        Log.info("Deleted %d message(s) (%d failed) from %s", success.size(), failed.size(), this.queue);
-    }
-
-    private DeleteMessageBatchResult deleteMessageBatch(final List<Message> messages) {
-        try {
-            final DeleteMessageBatchRequest request = this.factory.createDeleteMessageBatchRequest(this.queue, messages);
-            Log.info("Send delete request for %d message(s) to %s", messages.size(), this.queue);
-            return this.client.deleteMessageBatch(request);
-
-        } catch (final com.amazonaws.AmazonServiceException e) {
-            Log.severe(e, "Delete from %s failed", this.queue);
-
-        }
-        return null;
     }
 
     private List<SQSQueueListener> getListeners() {
