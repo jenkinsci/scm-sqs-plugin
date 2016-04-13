@@ -29,7 +29,7 @@ import io.relution.jenkins.scmsqs.factories.SQSFactoryImpl;
 import io.relution.jenkins.scmsqs.factories.ThreadFactoryImpl;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
 import io.relution.jenkins.scmsqs.interfaces.ExecutorFactory;
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
+import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 import io.relution.jenkins.scmsqs.interfaces.MessageParserFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
@@ -37,7 +37,7 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.model.EventTriggerMatcherImpl;
 import io.relution.jenkins.scmsqs.net.RequestFactory;
 import io.relution.jenkins.scmsqs.net.RequestFactoryImpl;
-import io.relution.jenkins.scmsqs.threading.ExecutorHolderImpl;
+import io.relution.jenkins.scmsqs.threading.ExecutorProviderImpl;
 import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorSchedulerImpl;
 
 
@@ -63,12 +63,12 @@ public class Context extends com.google.inject.AbstractModule {
                 .to(ExecutorFactoryImpl.class)
                 .in(com.google.inject.Singleton.class);
 
-        this.bind(ExecutorHolder.class)
-                .to(ExecutorHolderImpl.class)
+        this.bind(ExecutorProvider.class)
+                .to(ExecutorProviderImpl.class)
                 .in(com.google.inject.Singleton.class);
 
         this.bind(ExecutorService.class)
-                .toProvider(ExecutorHolder.class)
+                .toProvider(ExecutorProvider.class)
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSFactory.class)

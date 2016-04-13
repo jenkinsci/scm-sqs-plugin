@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 /**
  * Interface definition for classes that provide access to an {@link ExecutorService} instance.
  */
-public interface ExecutorHolder extends Provider<ExecutorService> {
+public interface ExecutorProvider extends Provider<ExecutorService> {
 
     /**
      * Returns the core number of threads.

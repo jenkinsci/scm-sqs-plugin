@@ -49,7 +49,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.relution.jenkins.scmsqs.interfaces.Event;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
+import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 import io.relution.jenkins.scmsqs.interfaces.MessageParser;
 import io.relution.jenkins.scmsqs.interfaces.MessageParserFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
@@ -68,7 +68,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     private transient MessageParserFactory     messageParserFactory;
     private transient EventTriggerMatcher      eventTriggerMatcher;
 
-    private transient ExecutorHolder           executorHolder;
+    private transient ExecutorProvider           executorProvider;
 
     @DataBoundConstructor
     public SQSTrigger(final String queueUuid) {
@@ -153,15 +153,15 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     }
 
     @Inject
-    public void setExecutorHolder(final ExecutorHolder holder) {
-        this.executorHolder = holder;
+    public void setExecutorHolder(final ExecutorProvider holder) {
+        this.executorProvider = holder;
     }
 
-    public ExecutorHolder getExecutorHolder() {
-        if (this.executorHolder == null) {
+    public ExecutorProvider getExecutorHolder() {
+        if (this.executorProvider == null) {
             Context.injector().injectMembers(this);
         }
-        return this.executorHolder;
+        return this.executorProvider;
     }
 
     private void handleMessage(final Message message) {
@@ -176,7 +176,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     private void execute() {
         Log.info("SQS event triggered build of %s", this.job.getFullDisplayName());
-        final ExecutorService service = this.executorHolder.get();
+        final ExecutorService service = this.executorProvider.get();
         service.execute(this);
     }
 

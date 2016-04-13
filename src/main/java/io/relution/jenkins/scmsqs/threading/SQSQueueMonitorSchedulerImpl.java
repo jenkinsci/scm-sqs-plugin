@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
+import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
@@ -42,7 +42,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     private final Map<String, SQSQueueMonitor> monitors = new HashMap<>();
 
     @Inject
-    public SQSQueueMonitorSchedulerImpl(final ExecutorHolder holder, final SQSQueueProvider provider, final SQSFactory factory) {
+    public SQSQueueMonitorSchedulerImpl(final ExecutorProvider holder, final SQSQueueProvider provider, final SQSFactory factory) {
         this.executor = holder.get();
         this.provider = provider;
         this.factory = factory;

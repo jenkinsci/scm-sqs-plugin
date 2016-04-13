@@ -27,7 +27,7 @@ import com.google.inject.Inject;
 
 import java.util.concurrent.ExecutorService;
 
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
+import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
@@ -39,11 +39,11 @@ import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorImpl;
 
 public class SQSFactoryImpl implements SQSFactory {
 
-    private final ExecutorHolder holder;
+    private final ExecutorProvider holder;
     private final RequestFactory factory;
 
     @Inject
-    public SQSFactoryImpl(final ExecutorHolder holder, final RequestFactory factory) {
+    public SQSFactoryImpl(final ExecutorProvider holder, final RequestFactory factory) {
         this.holder = holder;
         this.factory = factory;
     }
