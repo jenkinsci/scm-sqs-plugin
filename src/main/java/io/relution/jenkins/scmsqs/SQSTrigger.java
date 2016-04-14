@@ -56,6 +56,7 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.sqstrigger.Messages;
 
 
 public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQueueListener, Runnable {
@@ -217,14 +218,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     @Extension
     public static class DescriptorImpl extends TriggerDescriptor implements SQSQueueProvider {
 
-        private static final String                             DISPLAY_NAME             = "Trigger build when a message is published to an Amazon SQS queue";
-
-        private static final String                             ERROR_QUEUE_UNAVAILABLE  = "No queues have been configured. Add at least one queue to the global Jenkins configuration.";
-        private static final String                             ERROR_QUEUE_UUID_UNKNOWN = "The previously selected queue no longer exists. Select a new queue and save the configuration.";
-
-        private static final String                             INFO_QUEUE_DEFAULT       = "Selected first available queue. Verify the selection and save the configuration.";
-
-        private static final String                             KEY_SQS_QUEUES           = "sqsQueues";
+        private static final String                             KEY_SQS_QUEUES = "sqsQueues";
         private volatile List<SQSTriggerQueue>                  sqsQueues;
 
         private volatile transient Map<String, SQSTriggerQueue> sqsQueueMap;
@@ -251,7 +245,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
         @Override
         public String getDisplayName() {
-            return DISPLAY_NAME;
+            return Messages.displayName();
         }
 
         public ListBoxModel doFillQueueUuidItems() {
@@ -267,17 +261,17 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
         public FormValidation doCheckQueueUuid(@QueryParameter final String value) {
             if (this.getSqsQueues().size() == 0) {
-                return FormValidation.error(ERROR_QUEUE_UNAVAILABLE);
+                return FormValidation.error(Messages.errorQueueUnavailable());
             }
 
             if (StringUtils.isEmpty(value)) {
-                return FormValidation.ok(INFO_QUEUE_DEFAULT);
+                return FormValidation.ok(Messages.infoQueueDefault());
             }
 
             final SQSQueue queue = this.getSqsQueue(value);
 
             if (queue == null) {
-                return FormValidation.error(ERROR_QUEUE_UUID_UNKNOWN);
+                return FormValidation.error(Messages.errorQueueUuidUnknown());
             }
 
             return FormValidation.ok();
