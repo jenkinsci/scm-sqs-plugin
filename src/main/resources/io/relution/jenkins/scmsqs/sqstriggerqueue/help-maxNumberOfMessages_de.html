@@ -1,0 +1,20 @@
+<div>
+Die maximale Anzahl an Nachrichten die pro Request empfangen werden soll. Amazon SQS liefert
+nie mehr Nachrichten als diesen Wert zurück, kann aber weniger zurückliefern. Zulässige Werte
+gehen von 1 bis 10. Standard sind 10.
+<p/>
+Es werden möglicherweise nicht immer alle Nachrichten zurückgeliefert.
+<p/>
+Größere Werte reduzieren die Anzahl an Requests die gesendet werden müssen, wenn mehrere Nachrichten
+verfügbar sind. Es wird empfohlen den maximalen Wert zu verwenden. Reduzieren Sie diesen Wert nur,
+wenn es zu Problemen kommt und Sie sicher sind, dass diese durch einen kleineren Wert behoben
+werden.
+<p/>
+Siehe auch:
+<a href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html">
+API ReceiveMessage</a>
+<br/>
+Siehe auch:
+<a href="https://aws.amazon.com/blogs/aws/amazon-sqs-long-polling-batching/">Amazon SQS – Long
+Polling and Request Batching / Client-Side Buffering</a>
+</div>

@@ -38,6 +38,7 @@ import hudson.util.Secret;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.sqstriggerqueue.Messages;
 
 
 public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> implements SQSQueue {
@@ -246,52 +247,42 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
     @Extension
     public static class DescriptorImpl extends Descriptor<SQSTriggerQueue> {
 
-        private static final String ERROR_WAIT_TIME_SECONDS      = "Wait Time must be a number between 1 and 20.";
-        private static final String ERROR_MAX_NUMBER_OF_MESSAGES = "Max. number of messages must be a number between 1 and 10.";
-
-        private static final String INFO_URL_SQS                 = "You can use \"%s\" instead of the full URL";
-
-        private static final String WARNING_URL                  = "Name or URL of an SQS queue is required";
-
-        private static final String ERROR_URL_CODECOMMIT         = "This is a CodeCommit URL, please provide a queue name or SQS URL";
-        private static final String ERROR_URL_UNKNOWN            = "This is not an SQS URL, please provide a queue name or SQS URL";
-
         @Override
         public String getDisplayName() {
-            return "An Amazon SQS queue configuration"; // unused
+            return Messages.displayName(); // unused
         }
 
         public FormValidation doCheckNameOrUrl(@QueryParameter final String value) {
             if (StringUtils.isBlank(value)) {
-                return FormValidation.warning(WARNING_URL);
+                return FormValidation.warning(Messages.warningUrl());
             }
 
             final Matcher sqsUrlMatcher = SQS_URL_PATTERN.matcher(value);
 
             if (sqsUrlMatcher.matches()) {
                 final String name = sqsUrlMatcher.group("name");
-                return FormValidation.ok(INFO_URL_SQS, name);
+                return FormValidation.ok(Messages.infoUrlSqs(), name);
             }
 
             final Matcher ccUrlMatcher = CODECOMMIT_URL_PATTERN.matcher(value);
 
             if (ccUrlMatcher.matches()) {
-                return FormValidation.error(ERROR_URL_CODECOMMIT);
+                return FormValidation.error(Messages.errorUrlCodecommit());
             }
 
             if (StringUtils.startsWith(value, "http://") || StringUtils.startsWith(value, "https://")) {
-                return FormValidation.error(ERROR_URL_UNKNOWN);
+                return FormValidation.error(Messages.errorUrlUnknown());
             }
 
             return FormValidation.ok();
         }
 
         public FormValidation doCheckWaitTimeSeconds(@QueryParameter final String value) {
-            return this.validateNumber(value, 1, 20, ERROR_WAIT_TIME_SECONDS);
+            return this.validateNumber(value, 1, 20, Messages.errorWaitTimeSeconds());
         }
 
         public FormValidation doCheckMaxNumberOfMessage(@QueryParameter final String value) {
-            return this.validateNumber(value, 1, 10, ERROR_MAX_NUMBER_OF_MESSAGES);
+            return this.validateNumber(value, 1, 10, Messages.errorMaxNumberOfMessages());
         }
 
         public FormValidation doValidate(
