@@ -22,7 +22,7 @@
 	xmlns:t="/lib/hudson"
 	xmlns:f="/lib/form">
 	<f:entry
-		title="${%SQS queue to use}"
+		title="${%SQS queue to monitor}"
 		field="queueUuid">
 		<f:select />
 	</f:entry>
