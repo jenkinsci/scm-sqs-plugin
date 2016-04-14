@@ -64,9 +64,6 @@ public class SQSQueueMonitorSchedulerImplTest {
     private SQSQueueListener         listenerB1;
 
     @Mock
-    private SQSQueueListener         listenerC1;
-
-    @Mock
     private SQSQueue                 queueA;
 
     @Mock
@@ -84,7 +81,6 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.when(this.listenerA1.getQueueUuid()).thenReturn("a");
         Mockito.when(this.listenerA2.getQueueUuid()).thenReturn("a");
         Mockito.when(this.listenerB1.getQueueUuid()).thenReturn("b");
-        Mockito.when(this.listenerC1.getQueueUuid()).thenReturn("c");
 
         Mockito.when(this.queueA.getUuid()).thenReturn("a");
         Mockito.when(this.queueB.getUuid()).thenReturn("b");
@@ -114,19 +110,34 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldNotThrowIfUnregisterUnknownListener() {
-        assertThat(this.scheduler.unregister(this.listenerC1)).isFalse();
+        final SQSQueueListener listener = Mockito.mock(SQSQueueListener.class);
+        Mockito.when(listener.getQueueUuid()).thenReturn("unknown");
+
+        final boolean result = this.scheduler.unregister(listener);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    public void shouldStartMonitorForFirstListener() {
+        final boolean result = this.scheduler.register(this.listenerA1);
+
+        assertThat(result).isTrue();
+        Mockito.verify(this.provider, times(1)).getSqsQueue("a");
+        Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
+        Mockito.verify(this.monitorA).add(this.listenerA1);
     }
 
     @Test
     public void shouldUseSingleMonitorInstancePerQueue() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
         Mockito.verify(this.provider, times(1)).getSqsQueue("a");
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.monitorA).add(this.listenerA1);
 
-        assertThat(this.scheduler.register(this.listenerA2)).isTrue();
+        final boolean result = this.scheduler.register(this.listenerA2);
 
+        assertThat(result).isTrue();
         Mockito.verify(this.provider, times(2)).getSqsQueue("a");
         Mockito.verifyNoMoreInteractions(this.factory);
         Mockito.verify(this.monitorA).add(this.listenerA2);
@@ -134,21 +145,35 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldUseSeparateMonitorInstanceForEachQueue() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
         Mockito.verify(this.provider, times(1)).getSqsQueue("a");
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.monitorA).add(this.listenerA1);
 
-        assertThat(this.scheduler.register(this.listenerB1)).isTrue();
+        final boolean result = this.scheduler.register(this.listenerB1);
 
+        assertThat(result).isTrue();
         Mockito.verify(this.provider, times(1)).getSqsQueue("b");
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueB);
         Mockito.verify(this.monitorB).add(this.listenerB1);
         Mockito.verifyNoMoreInteractions(this.monitorA);
+    }
 
-        assertThat(this.scheduler.register(this.listenerA2)).isTrue();
+    @Test
+    public void shouldReuseMonitorInstaceForListenerOfSameQueue() {
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerB1);
+        Mockito.verify(this.provider, times(1)).getSqsQueue("a");
+        Mockito.verify(this.provider, times(1)).getSqsQueue("b");
+        Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
+        Mockito.verify(this.factory).createMonitor(this.executor, this.queueB);
+        Mockito.verify(this.monitorA).add(this.listenerA1);
+        Mockito.verify(this.monitorB).add(this.listenerB1);
+        Mockito.verifyNoMoreInteractions(this.monitorA);
 
+        final boolean result = this.scheduler.register(this.listenerA2);
+
+        assertThat(result).isTrue();
         Mockito.verify(this.provider, times(2)).getSqsQueue("a");
         Mockito.verifyNoMoreInteractions(this.factory);
         Mockito.verify(this.monitorA).add(this.listenerA2);
@@ -157,25 +182,28 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldNotCreateMonitorForUnknownQueue() {
-        assertThat(this.scheduler.register(this.listenerC1)).isFalse();
+        final SQSQueueListener listener = Mockito.mock(SQSQueueListener.class);
+        Mockito.when(listener.getQueueUuid()).thenReturn("unknown");
 
-        Mockito.verify(this.provider, times(1)).getSqsQueue("c");
+        final boolean result = this.scheduler.register(listener);
+
+        assertThat(result).isFalse();
+        Mockito.verify(this.provider, times(1)).getSqsQueue("unknown");
         Mockito.verifyZeroInteractions(this.factory);
     }
 
     @Test
     public void shouldCreateNewMonitorAfterUnregisterLast() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.unregister(this.listenerA1);
         Mockito.verify(this.provider, times(1)).getSqsQueue("a");
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.monitorA).add(this.listenerA1);
-
-        assertThat(this.scheduler.unregister(this.listenerA1)).isTrue();
         Mockito.verify(this.monitorA).remove(this.listenerA1);
 
-        assertThat(this.scheduler.register(this.listenerA2)).isTrue();
+        final boolean result = this.scheduler.register(this.listenerA2);
 
+        assertThat(result).isTrue();
         Mockito.verify(this.provider, times(2)).getSqsQueue("a");
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.monitorA).add(this.listenerA2);
@@ -183,26 +211,25 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldNotCreateNewMonitorIfMoreListenersOnUnregister() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-        assertThat(this.scheduler.register(this.listenerA2)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerA2);
+        this.scheduler.unregister(this.listenerA1);
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA2);
-
-        assertThat(this.scheduler.unregister(this.listenerA1)).isTrue();
         Mockito.verify(this.monitorA, times(1)).remove(this.listenerA1);
 
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
+        final boolean result = this.scheduler.register(this.listenerA1);
+
+        assertThat(result).isTrue();
         Mockito.verifyNoMoreInteractions(this.factory);
         Mockito.verify(this.monitorA, times(2)).add(this.listenerA1);
     }
 
     @Test
     public void shouldDoNothingOnConfigurationChangedIfUnchanged() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-        assertThat(this.scheduler.register(this.listenerB1)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerB1);
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueB);
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
@@ -219,14 +246,12 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldStopMonitorOnConfigurationChangedIfQueueRemoved() {
-        assertThat(this.scheduler.register(this.listenerA1)).isTrue();
-        assertThat(this.scheduler.register(this.listenerB1)).isTrue();
-
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerB1);
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
         Mockito.verify(this.factory).createMonitor(this.executor, this.queueB);
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
         Mockito.verify(this.monitorB, times(1)).add(this.listenerB1);
-
         Mockito.when(this.provider.getSqsQueue("b")).thenReturn(null);
 
         this.scheduler.onConfigurationChanged();
