@@ -22,15 +22,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import io.relution.jenkins.scmsqs.interfaces.ExecutorFactory;
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
+import io.relution.jenkins.scmsqs.interfaces.ExecutorProvider;
 
 
-public class ExecutorHolderImpl implements ExecutorHolder {
+public class ExecutorProviderImpl implements ExecutorProvider {
 
     private final ThreadPoolExecutor executor;
 
     @Inject
-    public ExecutorHolderImpl(final ExecutorFactory factory) {
+    public ExecutorProviderImpl(final ExecutorFactory factory) {
         this.executor = factory.createExecutor();
     }
 
@@ -45,7 +45,7 @@ public class ExecutorHolderImpl implements ExecutorHolder {
     }
 
     @Override
-    public ExecutorService getExecutorService() {
+    public ExecutorService get() {
         return this.executor;
     }
 }

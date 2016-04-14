@@ -23,20 +23,14 @@ import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient;
 import com.amazonaws.services.sqs.buffered.QueueBufferConfig;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.google.inject.Inject;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import io.relution.jenkins.scmsqs.interfaces.ExecutorHolder;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
+import io.relution.jenkins.scmsqs.net.RequestFactory;
 import io.relution.jenkins.scmsqs.net.SQSChannel;
 import io.relution.jenkins.scmsqs.net.SQSChannelImpl;
 import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorImpl;
@@ -44,11 +38,13 @@ import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorImpl;
 
 public class SQSFactoryImpl implements SQSFactory {
 
-    private final ExecutorHolder holder;
+    private final ExecutorService executor;
+    private final RequestFactory  factory;
 
     @Inject
-    public SQSFactoryImpl(final ExecutorHolder holder) {
-        this.holder = holder;
+    public SQSFactoryImpl(final ExecutorService executor, final RequestFactory factory) {
+        this.executor = executor;
+        this.factory = factory;
     }
 
     @Override
@@ -65,9 +61,8 @@ public class SQSFactoryImpl implements SQSFactory {
 
     @Override
     public AmazonSQSAsync createSQSAsync(final SQSQueue queue) {
-        final ExecutorService executorService = this.holder.getExecutorService();
         final ClientConfiguration clientConfiguration = this.getClientConfiguration(queue);
-        final AmazonSQSAsyncClient sqsAsync = new AmazonSQSAsyncClient(queue, clientConfiguration, executorService);
+        final AmazonSQSAsyncClient sqsAsync = new AmazonSQSAsyncClient(queue, clientConfiguration, this.executor);
 
         if (queue.getEndpoint() != null) {
             sqsAsync.setEndpoint(queue.getEndpoint());
@@ -82,44 +77,13 @@ public class SQSFactoryImpl implements SQSFactory {
     @Override
     public SQSChannel createChannel(final SQSQueue queue) {
         final AmazonSQS sqs = this.createSQS(queue);
-        return new SQSChannelImpl(sqs, queue, this);
+        return new SQSChannelImpl(sqs, queue, this.factory);
     }
 
     @Override
     public SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue) {
         final SQSChannel channel = this.createChannel(queue);
         return new SQSQueueMonitorImpl(executor, channel);
-    }
-
-    @Override
-    public ReceiveMessageRequest createReceiveMessageRequest(final SQSQueue queue) {
-        final ReceiveMessageRequest request = new ReceiveMessageRequest(queue.getUrl());
-        request.setMaxNumberOfMessages(queue.getMaxNumberOfMessages());
-        request.setWaitTimeSeconds(queue.getWaitTimeSeconds());
-        request.setRequestCredentials(queue);
-        return request;
-    }
-
-    @Override
-    public DeleteMessageBatchRequest createDeleteMessageBatchRequest(final SQSQueue queue, final List<Message> messages) {
-        final List<DeleteMessageBatchRequestEntry> entries = new ArrayList<>(messages.size());
-
-        for (final Message message : messages) {
-            final DeleteMessageBatchRequestEntry entry = this.createDeleteMessageBatchRequestEntry(message);
-            entries.add(entry);
-        }
-
-        final DeleteMessageBatchRequest request = new DeleteMessageBatchRequest(queue.getUrl());
-        request.setRequestCredentials(queue);
-        request.setEntries(entries);
-        return request;
-    }
-
-    private DeleteMessageBatchRequestEntry createDeleteMessageBatchRequestEntry(final Message message) {
-        final DeleteMessageBatchRequestEntry entry = new DeleteMessageBatchRequestEntry();
-        entry.setReceiptHandle(message.getReceiptHandle());
-        entry.setId(message.getMessageId());
-        return entry;
     }
 
     private ClientConfiguration getClientConfiguration(final SQSQueue queue) {
