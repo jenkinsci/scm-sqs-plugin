@@ -40,6 +40,9 @@ import io.relution.jenkins.scmsqs.net.SQSChannel;
 
 public class SQSQueueMonitorImplTest {
 
+    private static final String UUID_A   = "uuid-a";
+    private static final String UUID_B   = "uuid-b";
+
     @Mock
     private ExecutorService     executor;
 
@@ -62,8 +65,8 @@ public class SQSQueueMonitorImplTest {
 
         Mockito.when(this.channel.getMessages()).thenReturn(this.messages);
 
-        Mockito.when(this.listener.getQueueUuid()).thenReturn("a");
-        Mockito.when(this.channel.getQueueUuid()).thenReturn("a");
+        Mockito.when(this.listener.getQueueUuid()).thenReturn(UUID_A);
+        Mockito.when(this.channel.getQueueUuid()).thenReturn(UUID_A);
 
         this.monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
     }
@@ -94,8 +97,8 @@ public class SQSQueueMonitorImplTest {
 
     @Test
     public void shouldThrowIfWrongQueue() {
-        Mockito.when(this.listener.getQueueUuid()).thenReturn("a");
-        Mockito.when(this.channel.getQueueUuid()).thenReturn("b");
+        Mockito.when(this.listener.getQueueUuid()).thenReturn(UUID_A);
+        Mockito.when(this.channel.getQueueUuid()).thenReturn(UUID_B);
 
         assertThatThrownBy(new ThrowingCallable() {
 
