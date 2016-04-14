@@ -17,8 +17,10 @@
 package io.relution.jenkins.scmsqs.threading;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -95,16 +97,14 @@ public class SQSQueueMonitorSchedulerImplTest {
 
     @Test
     public void shouldThrowIfRegisterNullListener() {
-        Throwable thrown = null;
+        assertThatThrownBy(new ThrowingCallable() {
 
-        try {
-            this.scheduler.register(null);
-        } catch (final Throwable t) {
-            thrown = t;
-        }
+            @Override
+            public void call() throws Throwable {
+                SQSQueueMonitorSchedulerImplTest.this.scheduler.register(null);
+            }
 
-        assertThat(thrown).isNotNull();
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
