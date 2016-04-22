@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mwaylabs/scm-sqs-plugin.svg?branch=master)](https://travis-ci.org/mwaylabs/scm-sqs-plugin)
+[![Build Status](https://travis-ci.org/jenkinsci/scm-sqs-plugin.svg?branch=master)](https://travis-ci.org/jenkinsci/scm-sqs-plugin)
 
 #SCM SQS Plugin for Jenkins
 A Jenkins plugin that allows to use the Amazon Simple Queue Service (SQS) as a build trigger. Currently supports messages sent by Git repositories hosted on Amazon's CodeCommit. In the future additional services may be supported.
