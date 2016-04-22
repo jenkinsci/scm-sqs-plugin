@@ -16,7 +16,7 @@
 	<groupId>io.relution.jenkins</groupId>
 	<url>https://wiki.jenkins-ci.org/display/JENKINS/SCM+SQS+Plugin</url>
 	<artifactId>scm-sqs</artifactId>
-	<version>1.0</version>
+	<version>1.1-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 
 	<name>AWS SQS Build Trigger Plugin</name>
