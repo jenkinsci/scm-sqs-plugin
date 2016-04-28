@@ -116,10 +116,22 @@ public class EventTriggerMatcherImpl implements EventTriggerMatcher {
     }
 
     private boolean isMultiScm(final SCM scm) {
-        return Jenkins.getInstance().getPlugin("multiple-scms") != null && scm instanceof MultiSCM;
+        Jenkins jenkins = Jenkins.getInstance();
+
+        if (jenkins == null || scm == null) {
+            return false;
+        }
+
+        return jenkins.getPlugin("multiple-scms") != null && scm instanceof MultiSCM;
     }
 
     private boolean isGitScm(final SCM scm) {
-        return Jenkins.getInstance().getPlugin("git") != null && scm instanceof GitSCM;
+        Jenkins jenkins = Jenkins.getInstance();
+
+        if (jenkins == null || scm == null) {
+            return false;
+        }
+
+        return jenkins.getPlugin("git") != null && scm instanceof GitSCM;
     }
 }
