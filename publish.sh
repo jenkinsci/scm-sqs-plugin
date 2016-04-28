@@ -31,15 +31,35 @@ fi
 
 # Set the new version, commit, create a tag
 mvn versions:set -DnewVersion=$VERSION_RELEASE
+if [[ $? -ne 0 ]]; then
+	echo
+	echo "Error setting release version. Please verify and fix any errors reported above."
+	echo
+	exit
+fi
+
 git add pom.xml
 git commit -m "prepare release $TAG_RELEASE"
 git tag $TAG_RELEASE
 
 # Deploy the new version
 mvn deploy
+if [[ $? -ne 0 ]]; then
+	echo
+	echo "Error deploying version. Please verify and fix any errors reported above."
+	echo
+	exit
+fi
 
 # Set the new snapshot version, commit
 mvn versions:set -DnewVersion=$VERSION_SNAPSHOT
+if [[ $? -ne 0 ]]; then
+	echo
+	echo "Error setting snapshot version. Please verify and fix any errors reported above."
+	echo
+	exit
+fi
+
 git add pom.xml
 git commit -m "prepare for next development iteration"
 
