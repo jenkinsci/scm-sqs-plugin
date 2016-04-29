@@ -33,7 +33,7 @@ This setup assumes that you already have an AWS account and that you're able to 
 ###Install the plugin on Jenkins
 
 1. Go to `Jenkins > Manage Jenkins > Manage Plugins`.
-2. Go to `Available` and search for `scm sqs`.
+2. Go to `Available` and search for `scm-sqs` or `aws sqs`.
 3. Install the plugin and restart your Jenkins.
 
 If you've built the plugin from source go to `Advanced` and upload the plugin manually. Don't forget to check the plugin's Wiki page on Jenkins-CI.org: https://wiki.jenkins-ci.org/display/JENKINS/SCM+SQS+Plugin.
