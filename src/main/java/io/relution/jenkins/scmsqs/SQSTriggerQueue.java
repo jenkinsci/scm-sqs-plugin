@@ -35,10 +35,10 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
+import io.relution.jenkins.scmsqs.i18n.sqstriggerqueue.Messages;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.logging.Log;
-import io.relution.jenkins.scmsqs.sqstriggerqueue.Messages;
 
 
 public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> implements SQSQueue {
