@@ -32,9 +32,9 @@
 	</scm>
 
 	<properties>
-		<jenkins.version>1.625.3</jenkins.version>
+		<jenkins.version>1.626</jenkins.version>
 		<java.level>7</java.level>
-		<jenkins-test-harness.version>2.1</jenkins-test-harness.version>
+		<jenkins-test-harness.version>2.2</jenkins-test-harness.version>
 	</properties>
 
 	<licenses>
@@ -71,7 +71,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-sqs</artifactId>
-			<version>1.10.68</version>
+			<version>1.11.7</version>
 		</dependency>
 
 		<dependency>

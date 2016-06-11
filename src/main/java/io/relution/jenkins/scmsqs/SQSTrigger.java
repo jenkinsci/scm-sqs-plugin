@@ -47,6 +47,7 @@ import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import io.relution.jenkins.scmsqs.i18n.sqstrigger.Messages;
 import io.relution.jenkins.scmsqs.interfaces.Event;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
 import io.relution.jenkins.scmsqs.interfaces.MessageParser;
@@ -56,7 +57,6 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
-import io.relution.jenkins.scmsqs.sqstrigger.Messages;
 
 
 public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQueueListener, Runnable {

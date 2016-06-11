@@ -66,6 +66,10 @@ public class SQSChannelImpl implements SQSChannel {
 
             return result.getMessages();
 
+        } catch (final com.amazonaws.services.sqs.model.QueueDoesNotExistException e) {
+            Log.warning("Failed to send receive message request for %s, queue does not exist", this.queue);
+            throw e;
+
         } catch (final com.amazonaws.AmazonServiceException e) {
             Log.severe(e, "Failed to send receive message request for %s", this.queue);
 

@@ -53,11 +53,11 @@ public class EventTriggerMatcherImpl implements EventTriggerMatcher {
             return false;
         }
 
-        if (this.isGitScm(scm)) {
-            return this.matchesGitSCM(event, (GitSCM) scm);
+        if (this.isGitScmAvailable() && this.matchesGitSCM(event, scm)) {
+            return true;
 
-        } else if (this.isMultiScm(scm)) {
-            return this.matchesMultiSCM(event, (MultiSCM) scm);
+        } else if (this.isMultiScmAvailable() && this.matchesMultiSCM(event, scm)) {
+            return true;
 
         } else {
             return false;
@@ -65,14 +65,24 @@ public class EventTriggerMatcherImpl implements EventTriggerMatcher {
         }
     }
 
-    private boolean matchesGitSCM(final Event event, final GitSCM scm) {
-        final List<RemoteConfig> configs = scm.getRepositories();
-        final List<BranchSpec> branches = scm.getBranches();
+    private boolean matchesGitSCM(final Event event, final SCM scmProvider) {
+        if (!(scmProvider instanceof hudson.plugins.git.GitSCM)) {
+            return false;
+        }
+
+        final GitSCM git = (GitSCM) scmProvider;
+        final List<RemoteConfig> configs = git.getRepositories();
+        final List<BranchSpec> branches = git.getBranches();
 
         return this.matchesConfigs(event, configs) && this.matchesBranches(event, branches);
     }
 
-    private boolean matchesMultiSCM(final Event event, final MultiSCM multiSCM) {
+    private boolean matchesMultiSCM(final Event event, final SCM scmProvider) {
+        if (!(scmProvider instanceof org.jenkinsci.plugins.multiplescms.MultiSCM)) {
+            return false;
+        }
+
+        final MultiSCM multiSCM = (MultiSCM) scmProvider;
         final List<SCM> scms = multiSCM.getConfiguredSCMs();
 
         for (final SCM scm : scms) {
@@ -115,23 +125,23 @@ public class EventTriggerMatcherImpl implements EventTriggerMatcher {
         return false;
     }
 
-    private boolean isMultiScm(final SCM scm) {
-        Jenkins jenkins = Jenkins.getInstance();
+    private boolean isMultiScmAvailable() {
+        final Jenkins jenkins = Jenkins.getInstance();
 
-        if (jenkins == null || scm == null) {
+        if (jenkins == null) {
             return false;
         }
 
-        return jenkins.getPlugin("multiple-scms") != null && scm instanceof MultiSCM;
+        return jenkins.getPlugin("multiple-scms") != null;
     }
 
-    private boolean isGitScm(final SCM scm) {
-        Jenkins jenkins = Jenkins.getInstance();
+    private boolean isGitScmAvailable() {
+        final Jenkins jenkins = Jenkins.getInstance();
 
-        if (jenkins == null || scm == null) {
+        if (jenkins == null) {
             return false;
         }
 
-        return jenkins.getPlugin("git") != null && scm instanceof GitSCM;
+        return jenkins.getPlugin("git") != null;
     }
 }

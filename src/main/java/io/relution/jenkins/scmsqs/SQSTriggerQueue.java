@@ -35,19 +35,27 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
+import io.relution.jenkins.scmsqs.i18n.sqstriggerqueue.Messages;
 import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.logging.Log;
-import io.relution.jenkins.scmsqs.sqstriggerqueue.Messages;
 
 
 public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> implements SQSQueue {
 
-    public static final Pattern  SQS_URL_PATTERN        = Pattern
+    public static final Pattern  SQS_URL_PATTERN                = Pattern
             .compile("^(?:http(?:s)?://)?(?<endpoint>sqs\\..+?\\.amazonaws\\.com)/(?<id>.+?)/(?<name>.*)$");
 
-    public static final Pattern  CODECOMMIT_URL_PATTERN = Pattern
+    public static final Pattern  CODECOMMIT_URL_PATTERN         = Pattern
             .compile("^(?:http(?:s)?://)?git-codecommit\\.(?<region>.+?)\\.amazonaws\\.com/v1/repos/(?<name>.*)$");
+
+    private static final int     WAIT_TIME_SECONDS_DEFAULT      = 20;
+    private static final int     WAIT_TIME_SECONDS_MIN          = 1;
+    private static final int     WAIT_TIME_SECONDS_MAX          = 20;
+
+    private static final int     MAX_NUMBER_OF_MESSAGES_DEFAULT = 10;
+    private static final int     MAX_NUMBER_OF_MESSAGES_MIN     = 1;
+    private static final int     MAX_NUMBER_OF_MESSAGES_MAX     = 10;
 
     private final String         uuid;
 
@@ -55,8 +63,8 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
     private final String         accessKey;
     private final Secret         secretKey;
 
-    private final int            waitTimeSeconds;
-    private final int            maxNumberOfMessages;
+    private final Integer        waitTimeSeconds;
+    private final Integer        maxNumberOfMessages;
 
     private String               url;
     private final String         name;
@@ -73,15 +81,24 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
             final String nameOrUrl,
             final String accessKey,
             final Secret secretKey,
-            final int waitTimeSeconds,
-            final int maxNumberOfMessages) {
+            final Integer waitTimeSeconds,
+            final Integer maxNumberOfMessages) {
         this.uuid = StringUtils.isBlank(uuid) ? UUID.randomUUID().toString() : uuid;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.nameOrUrl = nameOrUrl;
 
-        this.waitTimeSeconds = this.limit(waitTimeSeconds, 1, 20, 20);
-        this.maxNumberOfMessages = this.limit(maxNumberOfMessages, 1, 10, 10);
+        this.waitTimeSeconds = this.limit(
+                waitTimeSeconds,
+                WAIT_TIME_SECONDS_MIN,
+                WAIT_TIME_SECONDS_MAX,
+                WAIT_TIME_SECONDS_DEFAULT);
+
+        this.maxNumberOfMessages = this.limit(
+                maxNumberOfMessages,
+                MAX_NUMBER_OF_MESSAGES_MIN,
+                MAX_NUMBER_OF_MESSAGES_MAX,
+                MAX_NUMBER_OF_MESSAGES_DEFAULT);
 
         final Matcher sqsUrlMatcher = SQS_URL_PATTERN.matcher(nameOrUrl);
 
@@ -137,11 +154,17 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
 
     @Override
     public int getWaitTimeSeconds() {
+        if (this.waitTimeSeconds == null) {
+            return WAIT_TIME_SECONDS_DEFAULT;
+        }
         return this.waitTimeSeconds;
     }
 
     @Override
     public int getMaxNumberOfMessages() {
+        if (this.maxNumberOfMessages == null) {
+            return MAX_NUMBER_OF_MESSAGES_DEFAULT;
+        }
         return this.maxNumberOfMessages;
     }
 
@@ -236,8 +259,8 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
         return this.s;
     }
 
-    private int limit(final int value, final int min, final int max, final int fallbackValue) {
-        if (value < min || value > max) {
+    private int limit(final Integer value, final int min, final int max, final int fallbackValue) {
+        if (value == null || value < min || value > max) {
             return fallbackValue;
         } else {
             return value;
@@ -278,11 +301,19 @@ public class SQSTriggerQueue extends AbstractDescribableImpl<SQSTriggerQueue> im
         }
 
         public FormValidation doCheckWaitTimeSeconds(@QueryParameter final String value) {
-            return this.validateNumber(value, 1, 20, Messages.errorWaitTimeSeconds());
+            return this.validateNumber(
+                    value,
+                    WAIT_TIME_SECONDS_MIN,
+                    WAIT_TIME_SECONDS_MAX,
+                    Messages.errorWaitTimeSeconds());
         }
 
         public FormValidation doCheckMaxNumberOfMessage(@QueryParameter final String value) {
-            return this.validateNumber(value, 1, 10, Messages.errorMaxNumberOfMessages());
+            return this.validateNumber(
+                    value,
+                    MAX_NUMBER_OF_MESSAGES_MIN,
+                    MAX_NUMBER_OF_MESSAGES_MAX,
+                    Messages.errorMaxNumberOfMessages());
         }
 
         public FormValidation doValidate(
