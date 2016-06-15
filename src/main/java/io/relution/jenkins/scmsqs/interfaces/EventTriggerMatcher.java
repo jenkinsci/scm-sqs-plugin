@@ -18,32 +18,21 @@ package io.relution.jenkins.scmsqs.interfaces;
 
 import java.util.List;
 
-import hudson.scm.SCM;
+import hudson.model.AbstractProject;
 
 
 /**
- * Interface definition for classes that match events to source code management (SCM)
- * configurations.
+ * Interface definition for classes that match events to {@link AbstractProject}s. If an event
+ * matches a project its build process should be triggered.
  */
 public interface EventTriggerMatcher {
 
     /**
-     * Returns a value indicating whether any of the specified events matches the specified SCM
-     * configuration.
-     * @param events The collection of {@link Event}s to test against the SCM configuration.
-     * @param scm The {@link SCM} to test against.
-     * @return {@code true} if any of the specified events matches the specified SCM configuration;
-     * otherwise, {@code false}.
+     * Returns a value indicating whether any of the specified events matches the specified job.
+     * @param events The collection of {@link Event}s to test against the job.
+     * @param job The {@link AbstractProject} to test against.
+     * @return {@code true} if any of the specified events matches the specified job; otherwise,
+     * {@code false}.
      */
-    boolean matches(List<Event> events, SCM scm);
-
-    /**
-     * Returns a value indicating whether the specified event matches the specified SCM
-     * configuration.
-     * @param event The {@link Event} to test against the SCM configuration.
-     * @param scm The {@link SCM} to test against.
-     * @return {@code true} if the specified event matches the specified SCM configuration;
-     * otherwise, {@code false}.
-     */
-    boolean matches(Event event, SCM scm);
+    boolean matches(List<Event> events, AbstractProject<?, ?> job);
 }

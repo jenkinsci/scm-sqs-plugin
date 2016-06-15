@@ -175,7 +175,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         final EventTriggerMatcher matcher = this.getEventTriggerMatcher();
         final List<Event> events = parser.parseMessage(message);
 
-        if (matcher.matches(events, this.job.getScm())) {
+        if (matcher.matches(events, this.job)) {
             this.execute();
         }
     }
