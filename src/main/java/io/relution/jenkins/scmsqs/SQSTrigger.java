@@ -224,6 +224,8 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         private volatile transient Map<String, SQSTriggerQueue> sqsQueueMap;
         private volatile transient SQSQueueMonitorScheduler     scheduler;
 
+        private transient boolean                               isLoaded;
+
         public static DescriptorImpl get() {
             final DescriptorExtensionList<Trigger<?>, TriggerDescriptor> triggers = Trigger.all();
             return triggers.get(DescriptorImpl.class);
@@ -237,6 +239,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         public synchronized void load() {
             super.load();
             this.initQueueMap();
+            this.isLoaded = true;
         }
 
         @Override
@@ -291,7 +294,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         }
 
         public List<SQSTriggerQueue> getSqsQueues() {
-            if (this.sqsQueues == null) {
+            if (!this.isLoaded) {
                 this.load();
             }
             if (this.sqsQueues == null) {
@@ -301,6 +304,9 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         }
 
         public SQSQueue getSqsQueue(final String uuid) {
+            if (!this.isLoaded) {
+                this.load();
+            }
             if (this.sqsQueueMap == null) {
                 return null;
             }
