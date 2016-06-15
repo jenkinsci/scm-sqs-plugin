@@ -67,7 +67,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     }
 
     @Override
-    public boolean unregister(final SQSQueueListener listener) {
+    public synchronized boolean unregister(final SQSQueueListener listener) {
         if (listener == null) {
             return false;
         }
@@ -95,7 +95,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     }
 
     @Override
-    public void onConfigurationChanged() {
+    public synchronized void onConfigurationChanged() {
         final Iterator<Entry<String, SQSQueueMonitor>> entries = this.monitors.entrySet().iterator();
 
         while (entries.hasNext()) {
@@ -104,7 +104,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         }
     }
 
-    private void register(final SQSQueueListener listener, final String uuid, final SQSQueue queue) {
+    private synchronized void register(final SQSQueueListener listener, final String uuid, final SQSQueue queue) {
         SQSQueueMonitor monitor = this.monitors.get(uuid);
 
         if (monitor == null) {
