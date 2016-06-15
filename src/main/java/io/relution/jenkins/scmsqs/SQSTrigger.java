@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.Util;
 import hudson.console.AnnotatedLargeText;
@@ -224,7 +225,8 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         private volatile transient SQSQueueMonitorScheduler     scheduler;
 
         public static DescriptorImpl get() {
-            return Trigger.all().get(DescriptorImpl.class);
+            final DescriptorExtensionList<Trigger<?>, TriggerDescriptor> triggers = Trigger.all();
+            return triggers.get(DescriptorImpl.class);
         }
 
         public DescriptorImpl() {
