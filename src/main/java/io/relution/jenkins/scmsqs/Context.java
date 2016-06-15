@@ -46,7 +46,7 @@ public class Context extends com.google.inject.AbstractModule {
 
     private static Injector injector;
 
-    public static Injector injector() {
+    public synchronized static Injector injector() {
         if (injector == null) {
             injector = Guice.createInjector(new Context());
         }
