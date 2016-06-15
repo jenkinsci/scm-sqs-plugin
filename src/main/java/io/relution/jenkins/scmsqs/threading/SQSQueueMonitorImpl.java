@@ -101,6 +101,10 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
             Log.warning("Queue %s does not exist, monitor stopped", this.channel);
             this.isShutDown = true;
 
+        } catch (final com.amazonaws.AmazonServiceException e) {
+            Log.warning("Service error for queue %s, monitor stopped", this.channel);
+            this.isShutDown = true;
+
         } catch (final Exception e) {
             Log.severe(e, "Unknown error, monitor for queue %s stopped", this.channel);
             this.isShutDown = true;
