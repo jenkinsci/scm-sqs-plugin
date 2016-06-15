@@ -35,6 +35,7 @@ import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.model.EventTriggerMatcherImpl;
+import io.relution.jenkins.scmsqs.model.SQSQueueProviderImpl;
 import io.relution.jenkins.scmsqs.net.RequestFactory;
 import io.relution.jenkins.scmsqs.net.RequestFactoryImpl;
 import io.relution.jenkins.scmsqs.threading.ExecutorProviderImpl;
@@ -80,7 +81,7 @@ public class Context extends com.google.inject.AbstractModule {
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSQueueProvider.class)
-                .to(SQSTrigger.DescriptorImpl.class)
+                .to(SQSQueueProviderImpl.class)
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSQueueMonitorScheduler.class)

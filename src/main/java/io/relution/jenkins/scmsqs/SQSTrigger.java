@@ -55,7 +55,6 @@ import io.relution.jenkins.scmsqs.interfaces.MessageParserFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
-import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
 import jenkins.model.Jenkins;
 
@@ -222,7 +221,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     }
 
     @Extension
-    public static class DescriptorImpl extends TriggerDescriptor implements SQSQueueProvider {
+    public static final class DescriptorImpl extends TriggerDescriptor {
 
         private static final String                             KEY_SQS_QUEUES = "sqsQueues";
         private volatile List<SQSTriggerQueue>                  sqsQueues;
@@ -295,7 +294,6 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
             return true;
         }
 
-        @Override
         public List<SQSTriggerQueue> getSqsQueues() {
             if (this.sqsQueues == null) {
                 this.load();
@@ -306,7 +304,6 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
             return this.sqsQueues;
         }
 
-        @Override
         public SQSQueue getSqsQueue(final String uuid) {
             if (this.sqsQueueMap == null) {
                 return null;
