@@ -56,7 +56,6 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.logging.Log;
-import jenkins.model.Jenkins;
 
 
 public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQueueListener, Runnable {
@@ -73,11 +72,6 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     @DataBoundConstructor
     public SQSTrigger(final String queueUuid) {
         this.queueUuid = queueUuid;
-    }
-
-    @Override
-    public TriggerDescriptor getDescriptor() {
-        return (TriggerDescriptor) Jenkins.getInstance().getDescriptorOrDie(this.getClass());
     }
 
     public File getLogFile() {
@@ -234,7 +228,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         }
 
         public DescriptorImpl() {
-            this.load();
+            super(SQSTrigger.class);
         }
 
         @Override
