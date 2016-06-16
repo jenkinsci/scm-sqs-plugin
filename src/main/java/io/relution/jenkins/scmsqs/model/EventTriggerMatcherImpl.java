@@ -22,33 +22,38 @@ import org.jenkinsci.plugins.multiplescms.MultiSCM;
 
 import java.util.List;
 
+import hudson.model.AbstractProject;
 import hudson.plugins.git.BranchSpec;
 import hudson.plugins.git.GitSCM;
 import hudson.scm.SCM;
 import io.relution.jenkins.scmsqs.interfaces.Event;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
+import io.relution.jenkins.scmsqs.logging.Log;
 import jenkins.model.Jenkins;
 
 
 public class EventTriggerMatcherImpl implements EventTriggerMatcher {
 
     @Override
-    public boolean matches(final List<Event> events, final SCM scm) {
-        if (events == null || scm == null) {
+    public boolean matches(final List<Event> events, final AbstractProject<?, ?> job) {
+        if (events == null || job == null) {
             return false;
         }
 
+        Log.info("Test if any event matches job %s", job.getName());
+
         for (final Event event : events) {
-            if (this.matches(event, scm)) {
+            if (this.matches(event, job.getScm())) {
+                Log.info("Job %s matches event %s%s (%s)", job.getName(), event.getHost(), event.getPath(), event.getBranch());
                 return true;
             }
         }
 
+        Log.info("Event(s) did not match job.");
         return false;
     }
 
-    @Override
-    public boolean matches(final Event event, final SCM scm) {
+    private boolean matches(final Event event, final SCM scm) {
         if (event == null || scm == null) {
             return false;
         }

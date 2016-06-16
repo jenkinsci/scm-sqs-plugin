@@ -83,7 +83,13 @@ public class SQSFactoryImpl implements SQSFactory {
     @Override
     public SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue) {
         final SQSChannel channel = this.createChannel(queue);
-        return new SQSQueueMonitorImpl(executor, channel);
+        return new SQSQueueMonitorImpl(executor, queue, channel);
+    }
+
+    @Override
+    public SQSQueueMonitor createMonitor(final SQSQueueMonitor monitor, final SQSQueue queue) {
+        final SQSChannel channel = this.createChannel(queue);
+        return monitor.clone(queue, channel);
     }
 
     private ClientConfiguration getClientConfiguration(final SQSQueue queue) {

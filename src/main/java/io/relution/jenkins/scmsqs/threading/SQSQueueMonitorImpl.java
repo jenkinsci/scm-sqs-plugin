@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.logging.Log;
@@ -35,20 +36,49 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     private final static String          ERROR_WRONG_QUEUE = "The specified listener is associated with another queue.";
 
     private final ExecutorService        executor;
+
+    private final SQSQueue               queue;
     private final SQSChannel             channel;
 
     private final Object                 listenersLock     = new Object();
-    private final List<SQSQueueListener> listeners         = new ArrayList<>();
+    private final List<SQSQueueListener> listeners;
 
     private final AtomicBoolean          isRunning         = new AtomicBoolean();
     private volatile boolean             isShutDown;
 
-    public SQSQueueMonitorImpl(final ExecutorService executor, final SQSChannel channel) {
+    public SQSQueueMonitorImpl(final ExecutorService executor, final SQSQueue queue, final SQSChannel channel) {
         ThrowIf.isNull(executor, "executor");
         ThrowIf.isNull(channel, "channel");
 
         this.executor = executor;
+
+        this.queue = queue;
         this.channel = channel;
+
+        this.listeners = new ArrayList<>();
+    }
+
+    private SQSQueueMonitorImpl(final ExecutorService executor,
+            final SQSQueue queue,
+            final SQSChannel channel,
+            final List<SQSQueueListener> listeners,
+            final boolean isShutDown) {
+        ThrowIf.isNull(executor, "executor");
+        ThrowIf.isNull(channel, "channel");
+
+        this.executor = executor;
+
+        this.queue = queue;
+        this.channel = channel;
+
+        this.listeners = listeners;
+    }
+
+    @Override
+    public SQSQueueMonitor clone(final SQSQueue queue, final SQSChannel channel) {
+        synchronized (this.listenersLock) {
+            return new SQSQueueMonitorImpl(this.executor, queue, channel, this.listeners, this.isShutDown);
+        }
     }
 
     @Override
@@ -101,6 +131,10 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
             Log.warning("Queue %s does not exist, monitor stopped", this.channel);
             this.isShutDown = true;
 
+        } catch (final com.amazonaws.AmazonServiceException e) {
+            Log.warning("Service error for queue %s, monitor stopped", this.channel);
+            this.isShutDown = true;
+
         } catch (final Exception e) {
             Log.severe(e, "Unknown error, monitor for queue %s stopped", this.channel);
             this.isShutDown = true;
@@ -121,6 +155,16 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     @Override
     public boolean isShutDown() {
         return this.isShutDown;
+    }
+
+    @Override
+    public SQSQueue getQueue() {
+        return this.queue;
+    }
+
+    @Override
+    public SQSChannel getChannel() {
+        return this.channel;
     }
 
     private void execute() {

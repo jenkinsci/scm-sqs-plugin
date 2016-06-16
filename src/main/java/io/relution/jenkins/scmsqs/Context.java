@@ -22,7 +22,6 @@ import com.google.inject.Injector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-import hudson.Extension;
 import io.relution.jenkins.scmsqs.factories.ExecutorFactoryImpl;
 import io.relution.jenkins.scmsqs.factories.MessageParserFactoryImpl;
 import io.relution.jenkins.scmsqs.factories.SQSFactoryImpl;
@@ -35,18 +34,18 @@ import io.relution.jenkins.scmsqs.interfaces.SQSFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.model.EventTriggerMatcherImpl;
+import io.relution.jenkins.scmsqs.model.SQSQueueProviderImpl;
 import io.relution.jenkins.scmsqs.net.RequestFactory;
 import io.relution.jenkins.scmsqs.net.RequestFactoryImpl;
 import io.relution.jenkins.scmsqs.threading.ExecutorProviderImpl;
 import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorSchedulerImpl;
 
 
-@Extension
 public class Context extends com.google.inject.AbstractModule {
 
     private static Injector injector;
 
-    public static Injector injector() {
+    public synchronized static Injector injector() {
         if (injector == null) {
             injector = Guice.createInjector(new Context());
         }
@@ -80,7 +79,7 @@ public class Context extends com.google.inject.AbstractModule {
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSQueueProvider.class)
-                .to(SQSTrigger.DescriptorImpl.class)
+                .to(SQSQueueProviderImpl.class)
                 .in(com.google.inject.Singleton.class);
 
         this.bind(SQSQueueMonitorScheduler.class)

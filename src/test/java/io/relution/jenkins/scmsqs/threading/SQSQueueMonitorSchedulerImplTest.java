@@ -35,6 +35,7 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
 
 
 public class SQSQueueMonitorSchedulerImplTest {
@@ -80,13 +81,29 @@ public class SQSQueueMonitorSchedulerImplTest {
 
         Mockito.when(this.factory.createMonitor(this.executor, this.queueA)).thenReturn(this.monitorA);
         Mockito.when(this.factory.createMonitor(this.executor, this.queueB)).thenReturn(this.monitorB);
+        Mockito.when(this.factory.createMonitor(this.monitorA, this.queueA)).thenReturn(this.monitorA);
+        Mockito.when(this.factory.createMonitor(this.monitorB, this.queueB)).thenReturn(this.monitorB);
+
+        Mockito.when(this.monitorA.getQueue()).thenReturn(this.queueA);
+        Mockito.when(this.monitorB.getQueue()).thenReturn(this.queueB);
 
         Mockito.when(this.listenerA1.getQueueUuid()).thenReturn(UUID_A);
         Mockito.when(this.listenerA2.getQueueUuid()).thenReturn(UUID_A);
         Mockito.when(this.listenerB1.getQueueUuid()).thenReturn(UUID_B);
 
         Mockito.when(this.queueA.getUuid()).thenReturn(UUID_A);
+        Mockito.when(this.queueA.getUrl()).thenReturn("url-a");
+        Mockito.when(this.queueA.getAWSAccessKeyId()).thenReturn("access-key-a");
+        Mockito.when(this.queueA.getAWSSecretKey()).thenReturn("secret-key-a");
+        Mockito.when(this.queueA.getMaxNumberOfMessages()).thenReturn(20);
+        Mockito.when(this.queueA.getWaitTimeSeconds()).thenReturn(10);
+
         Mockito.when(this.queueB.getUuid()).thenReturn(UUID_B);
+        Mockito.when(this.queueB.getUrl()).thenReturn("url-b");
+        Mockito.when(this.queueB.getAWSAccessKeyId()).thenReturn("access-key-b");
+        Mockito.when(this.queueB.getAWSSecretKey()).thenReturn("secret-key-b");
+        Mockito.when(this.queueB.getMaxNumberOfMessages()).thenReturn(20);
+        Mockito.when(this.queueB.getWaitTimeSeconds()).thenReturn(10);
 
         Mockito.when(this.provider.getSqsQueue(UUID_A)).thenReturn(this.queueA);
         Mockito.when(this.provider.getSqsQueue(UUID_B)).thenReturn(this.queueB);
@@ -238,13 +255,65 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
         Mockito.verify(this.monitorB, times(1)).add(this.listenerB1);
 
-        this.scheduler.onConfigurationChanged();
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
 
         Mockito.verifyNoMoreInteractions(this.factory);
+        Mockito.verify(this.monitorA).getQueue();
+        Mockito.verify(this.monitorB).getQueue();
         Mockito.verify(this.monitorA).isShutDown();
         Mockito.verify(this.monitorB).isShutDown();
         Mockito.verifyNoMoreInteractions(this.monitorA);
         Mockito.verifyNoMoreInteractions(this.monitorB);
+    }
+
+    @Test
+    public void shouldStartNewMonitorOnConfigurationChangedIfChanged() {
+        final SQSQueue queueA_ = Mockito.mock(SQSQueue.class);
+        final SQSQueueMonitor monitorA_ = Mockito.mock(SQSQueueMonitor.class);
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerA2);
+        Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
+        Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
+        Mockito.verify(this.monitorA, times(1)).add(this.listenerA2);
+        Mockito.when(this.monitorA.getQueue()).thenReturn(this.queueA);
+        Mockito.when(this.provider.getSqsQueue(UUID_A)).thenReturn(queueA_);
+        Mockito.when(this.factory.createMonitor(this.monitorA, queueA_)).thenReturn(monitorA_);
+
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
+
+        Mockito.verify(this.factory).createMonitor(this.monitorA, queueA_);
+        Mockito.verify(this.monitorA).getQueue();
+        Mockito.verify(this.monitorA).shutDown();
+        Mockito.verify(this.monitorA).isShutDown();
+        Mockito.verifyNoMoreInteractions(this.monitorA);
+        Mockito.verifyNoMoreInteractions(monitorA_);
+    }
+
+    @Test
+    public void shouldDoNothingOnConfigurationChangedIfPropertiesEqual() {
+        final SQSQueue queueA_ = Mockito.mock(SQSQueue.class);
+        final SQSQueueMonitor monitorA_ = Mockito.mock(SQSQueueMonitor.class);
+        this.scheduler.register(this.listenerA1);
+        this.scheduler.register(this.listenerA2);
+        Mockito.verify(this.factory).createMonitor(this.executor, this.queueA);
+        Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
+        Mockito.verify(this.monitorA, times(1)).add(this.listenerA2);
+        Mockito.when(this.monitorA.getQueue()).thenReturn(this.queueA);
+        Mockito.when(this.provider.getSqsQueue(UUID_A)).thenReturn(queueA_);
+        Mockito.when(this.factory.createMonitor(this.monitorA, queueA_)).thenReturn(monitorA_);
+        Mockito.when(queueA_.getUuid()).thenReturn(UUID_A);
+        Mockito.when(queueA_.getUrl()).thenReturn("url-a");
+        Mockito.when(queueA_.getAWSAccessKeyId()).thenReturn("access-key-a");
+        Mockito.when(queueA_.getAWSSecretKey()).thenReturn("secret-key-a");
+        Mockito.when(queueA_.getMaxNumberOfMessages()).thenReturn(20);
+        Mockito.when(queueA_.getWaitTimeSeconds()).thenReturn(10);
+
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
+
+        Mockito.verifyNoMoreInteractions(this.factory);
+        Mockito.verify(this.monitorA).getQueue();
+        Mockito.verify(this.monitorA).isShutDown();
+        Mockito.verifyNoMoreInteractions(this.monitorA);
     }
 
     @Test
@@ -257,9 +326,10 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.verify(this.monitorB, times(1)).add(this.listenerB1);
         Mockito.when(this.provider.getSqsQueue(UUID_B)).thenReturn(null);
 
-        this.scheduler.onConfigurationChanged();
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
 
         Mockito.verifyNoMoreInteractions(this.factory);
+        Mockito.verify(this.monitorA).getQueue();
         Mockito.verify(this.monitorA).isShutDown();
         Mockito.verify(this.monitorB).shutDown();
         Mockito.verifyNoMoreInteractions(this.monitorA);

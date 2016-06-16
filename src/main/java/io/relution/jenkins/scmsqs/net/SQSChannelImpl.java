@@ -23,11 +23,15 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
+import org.apache.commons.httpclient.HttpStatus;
+
 import java.util.Collections;
 import java.util.List;
 
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.model.constants.ErrorCode;
+import io.relution.jenkins.scmsqs.util.ErrorType;
 import io.relution.jenkins.scmsqs.util.ThrowIf;
 
 
@@ -71,8 +75,12 @@ public class SQSChannelImpl implements SQSChannel {
             throw e;
 
         } catch (final com.amazonaws.AmazonServiceException e) {
-            Log.severe(e, "Failed to send receive message request for %s", this.queue);
+            if (ErrorType.is(e, ErrorCode.INVALID_CLIENT_TOKEN_ID, HttpStatus.SC_FORBIDDEN)) {
+                Log.warning("Failed to send receive message request for %s, %s", this.queue, e.getMessage());
+                throw e;
+            }
 
+            Log.severe(e, "Failed to send receive message request for %s", this.queue);
         }
         return Collections.emptyList();
     }

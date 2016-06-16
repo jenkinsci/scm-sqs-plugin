@@ -36,7 +36,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.Util;
 import hudson.console.AnnotatedLargeText;
@@ -47,6 +49,7 @@ import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import hudson.util.SequentialExecutionQueue;
 import io.relution.jenkins.scmsqs.i18n.sqstrigger.Messages;
 import io.relution.jenkins.scmsqs.interfaces.Event;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
@@ -55,8 +58,9 @@ import io.relution.jenkins.scmsqs.interfaces.MessageParserFactory;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
-import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
+import io.relution.jenkins.scmsqs.model.events.EventBroker;
 
 
 public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQueueListener, Runnable {
@@ -81,9 +85,17 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     @Override
     public void start(final AbstractProject<?, ?> project, final boolean newInstance) {
-        Log.info("Start trigger for project %s", project);
-        this.getScheduler().register(this);
         super.start(project, newInstance);
+
+        final DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        descriptor.queue.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                Log.info("Start trigger for project %s", project);
+                SQSTrigger.this.getScheduler().register(SQSTrigger.this);
+            }
+        });
     }
 
     @Override
@@ -94,9 +106,17 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     @Override
     public void stop() {
-        Log.info("Stop trigger (%s)", this);
-        this.getScheduler().unregister(this);
         super.stop();
+
+        final DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        descriptor.queue.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                Log.info("Stop trigger (%s)", this);
+                SQSTrigger.this.getScheduler().unregister(SQSTrigger.this);
+            }
+        });
     }
 
     @Override
@@ -169,7 +189,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         final EventTriggerMatcher matcher = this.getEventTriggerMatcher();
         final List<Event> events = parser.parseMessage(message);
 
-        if (matcher.matches(events, this.job.getScm())) {
+        if (matcher.matches(events, this.job)) {
             this.execute();
         }
     }
@@ -216,26 +236,30 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
     }
 
     @Extension
-    public static class DescriptorImpl extends TriggerDescriptor implements SQSQueueProvider {
+    public static final class DescriptorImpl extends TriggerDescriptor {
 
         private static final String                             KEY_SQS_QUEUES = "sqsQueues";
         private volatile List<SQSTriggerQueue>                  sqsQueues;
 
         private volatile transient Map<String, SQSTriggerQueue> sqsQueueMap;
-        private volatile transient SQSQueueMonitorScheduler     scheduler;
+        private transient boolean                               isLoaded;
+
+        private transient final SequentialExecutionQueue        queue          = new SequentialExecutionQueue(Executors.newSingleThreadExecutor());
 
         public static DescriptorImpl get() {
-            return Trigger.all().get(DescriptorImpl.class);
+            final DescriptorExtensionList<Trigger<?>, TriggerDescriptor> triggers = Trigger.all();
+            return triggers.get(DescriptorImpl.class);
         }
 
         public DescriptorImpl() {
-            this.load();
+            super(SQSTrigger.class);
         }
 
         @Override
         public synchronized void load() {
             super.load();
             this.initQueueMap();
+            this.isLoaded = true;
         }
 
         @Override
@@ -285,13 +309,12 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
             this.initQueueMap();
             this.save();
 
-            this.scheduler.onConfigurationChanged();
+            EventBroker.getInstance().post(new ConfigurationChangedEvent());
             return true;
         }
 
-        @Override
         public List<SQSTriggerQueue> getSqsQueues() {
-            if (this.sqsQueues == null) {
+            if (!this.isLoaded) {
                 this.load();
             }
             if (this.sqsQueues == null) {
@@ -300,24 +323,14 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
             return this.sqsQueues;
         }
 
-        @Override
         public SQSQueue getSqsQueue(final String uuid) {
+            if (!this.isLoaded) {
+                this.load();
+            }
             if (this.sqsQueueMap == null) {
                 return null;
             }
             return this.sqsQueueMap.get(uuid);
-        }
-
-        @Inject
-        public void setScheduler(final SQSQueueMonitorScheduler sQSQueueMonitorScheduler) {
-            this.scheduler = sQSQueueMonitorScheduler;
-        }
-
-        public SQSQueueMonitorScheduler getScheduler() {
-            if (this.scheduler == null) {
-                Context.injector().injectMembers(this);
-            }
-            return this.scheduler;
         }
 
         private void initQueueMap() {

@@ -16,7 +16,10 @@
 
 package io.relution.jenkins.scmsqs.threading;
 
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,6 +34,8 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
+import io.relution.jenkins.scmsqs.model.events.EventBroker;
 import io.relution.jenkins.scmsqs.util.ThrowIf;
 
 
@@ -47,6 +52,8 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         this.executor = executor;
         this.provider = provider;
         this.factory = factory;
+
+        EventBroker.getInstance().register(this);
     }
 
     @Override
@@ -67,7 +74,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     }
 
     @Override
-    public boolean unregister(final SQSQueueListener listener) {
+    public synchronized boolean unregister(final SQSQueueListener listener) {
         if (listener == null) {
             return false;
         }
@@ -95,7 +102,8 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     }
 
     @Override
-    public void onConfigurationChanged() {
+    @Subscribe
+    public synchronized void onConfigurationChanged(final ConfigurationChangedEvent event) {
         final Iterator<Entry<String, SQSQueueMonitor>> entries = this.monitors.entrySet().iterator();
 
         while (entries.hasNext()) {
@@ -104,7 +112,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         }
     }
 
-    private void register(final SQSQueueListener listener, final String uuid, final SQSQueue queue) {
+    private synchronized void register(final SQSQueueListener listener, final String uuid, final SQSQueue queue) {
         SQSQueueMonitor monitor = this.monitors.get(uuid);
 
         if (monitor == null) {
@@ -119,18 +127,51 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
 
     private void reconfigure(final Iterator<Entry<String, SQSQueueMonitor>> entries, final Entry<String, SQSQueueMonitor> entry) {
         final String uuid = entry.getKey();
-        final SQSQueueMonitor monitor = entry.getValue();
+        SQSQueueMonitor monitor = entry.getValue();
         final SQSQueue queue = this.provider.getSqsQueue(uuid);
 
         if (queue == null) {
             Log.info("Queue {%s} removed, shut down monitor", uuid);
             monitor.shutDown();
             entries.remove();
-
-        } else if (monitor.isShutDown()) {
-            Log.info("Monitor for queue {%s} is shut down, restart", uuid);
+        } else if (monitor.isShutDown() || this.hasQueueChanged(monitor, queue)) {
+            Log.info("Queue {%s} changed or monitor stopped, create new monitor", uuid);
+            monitor = this.factory.createMonitor(monitor, queue);
+            entry.setValue(monitor).shutDown();
             this.executor.execute(monitor);
-
         }
+    }
+
+    private boolean hasQueueChanged(final SQSQueueMonitor monitor, final SQSQueue queue) {
+        try {
+            final SQSQueue current = monitor.getQueue();
+
+            if (!StringUtils.equals(current.getUrl(), queue.getUrl())) {
+                return true;
+            }
+
+            if (!StringUtils.equals(current.getAWSAccessKeyId(), queue.getAWSAccessKeyId())) {
+                return true;
+            }
+
+            if (!StringUtils.equals(current.getAWSSecretKey(), queue.getAWSSecretKey())) {
+                return true;
+            }
+
+            if (current.getMaxNumberOfMessages() != queue.getMaxNumberOfMessages()) {
+                return true;
+            }
+
+            if (current.getWaitTimeSeconds() != queue.getWaitTimeSeconds()) {
+                return true;
+            }
+
+            return false;
+        } catch (final com.amazonaws.AmazonServiceException e) {
+            Log.warning("Cannot compare queues: %s", e.getMessage());
+        } catch (final Exception e) {
+            Log.severe(e, "Cannot compare queues, unknown error");
+        }
+        return true;
     }
 }
