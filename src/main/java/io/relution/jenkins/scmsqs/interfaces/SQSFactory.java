@@ -62,4 +62,17 @@ public interface SQSFactory {
      * @return A new {@link SQSQueueMonitor} instance suitable for monitoring the specified queue.
      */
     SQSQueueMonitor createMonitor(final ExecutorService executor, final SQSQueue queue);
+
+    /**
+     * Returns a new monitor instance that can be used to poll the specified queue for new
+     * messages.
+     * <p>
+     * The new monitor has the same listeners as the specified monitor. This should be used to
+     * create a new monitor instance in case a queue was reconfigured.
+     * @param monitor The monitor used to initialize internal fields of the new instance.
+     * @param queue The {@link SQSQueue} for which to create a monitor.
+     * @return A new {@link SQSQueueMonitor} instance suitable for monitoring the specified queue,
+     * that has the same listeners as the specified monitor.
+     */
+    SQSQueueMonitor createMonitor(final SQSQueueMonitor monitor, final SQSQueue queue);
 }

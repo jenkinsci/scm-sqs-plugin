@@ -28,6 +28,15 @@ import io.relution.jenkins.scmsqs.net.SQSChannel;
 public interface SQSQueueMonitor extends Runnable {
 
     /**
+     * Returns a new instance for the specified queue and channel that has the same listeners as
+     * this instance.
+     * @param queue The {@link SQSQueue} to monitor.
+     * @param channel The {@link SQSChannel} used to access the queue.
+     * @return A new {@link SQSQueueMonitor} instance.
+     */
+    SQSQueueMonitor clone(SQSQueue queue, SQSChannel channel);
+
+    /**
      * Registers a new listener with the monitor. The listener is notified when new messages arrive
      * in the queue.
      * <p>

@@ -41,7 +41,7 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     private final SQSChannel             channel;
 
     private final Object                 listenersLock     = new Object();
-    private final List<SQSQueueListener> listeners         = new ArrayList<>();
+    private final List<SQSQueueListener> listeners;
 
     private final AtomicBoolean          isRunning         = new AtomicBoolean();
     private volatile boolean             isShutDown;
@@ -54,6 +54,32 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
 
         this.queue = queue;
         this.channel = channel;
+
+        this.listeners = new ArrayList<>();
+    }
+
+    private SQSQueueMonitorImpl(final ExecutorService executor,
+            final SQSQueue queue,
+            final SQSChannel channel,
+            final List<SQSQueueListener> listeners,
+            final boolean isShutDown) {
+        ThrowIf.isNull(executor, "executor");
+        ThrowIf.isNull(channel, "channel");
+
+        this.executor = executor;
+
+        this.queue = queue;
+        this.channel = channel;
+
+        this.listeners = listeners;
+        this.isShutDown = isShutDown;
+    }
+
+    @Override
+    public SQSQueueMonitor clone(final SQSQueue queue, final SQSChannel channel) {
+        synchronized (this.listenersLock) {
+            return new SQSQueueMonitorImpl(this.executor, queue, channel, this.listeners, this.isShutDown);
+        }
     }
 
     @Override
