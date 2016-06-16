@@ -19,7 +19,6 @@ public class RequestFactoryImpl implements RequestFactory {
         final ReceiveMessageRequest request = new ReceiveMessageRequest(queue.getUrl());
         request.setMaxNumberOfMessages(queue.getMaxNumberOfMessages());
         request.setWaitTimeSeconds(queue.getWaitTimeSeconds());
-        request.setRequestCredentials(queue);
         return request;
     }
 
@@ -33,7 +32,6 @@ public class RequestFactoryImpl implements RequestFactory {
         }
 
         final DeleteMessageBatchRequest request = new DeleteMessageBatchRequest(queue.getUrl());
-        request.setRequestCredentials(queue);
         request.setEntries(entries);
         return request;
     }
