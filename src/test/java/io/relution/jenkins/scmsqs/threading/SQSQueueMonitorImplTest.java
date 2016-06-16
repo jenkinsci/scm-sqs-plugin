@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.net.SQSChannel;
@@ -45,6 +46,9 @@ public class SQSQueueMonitorImplTest {
 
     @Mock
     private ExecutorService     executor;
+
+    @Mock
+    private SQSQueue            queue;
 
     @Mock
     private SQSChannel          channel;
@@ -68,7 +72,7 @@ public class SQSQueueMonitorImplTest {
         Mockito.when(this.listener.getQueueUuid()).thenReturn(UUID_A);
         Mockito.when(this.channel.getQueueUuid()).thenReturn(UUID_A);
 
-        this.monitor = new SQSQueueMonitorImpl(this.executor, this.channel);
+        this.monitor = new SQSQueueMonitorImpl(this.executor, this.queue, this.channel);
     }
 
     @Test

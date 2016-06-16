@@ -19,6 +19,8 @@ package io.relution.jenkins.scmsqs.threading;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -99,6 +101,7 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         return true;
     }
 
+    @Override
     @Subscribe
     public synchronized void onConfigurationChanged(final ConfigurationChangedEvent event) {
         final Iterator<Entry<String, SQSQueueMonitor>> entries = this.monitors.entrySet().iterator();
@@ -124,18 +127,48 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
 
     private void reconfigure(final Iterator<Entry<String, SQSQueueMonitor>> entries, final Entry<String, SQSQueueMonitor> entry) {
         final String uuid = entry.getKey();
-        final SQSQueueMonitor monitor = entry.getValue();
+        SQSQueueMonitor monitor = entry.getValue();
         final SQSQueue queue = this.provider.getSqsQueue(uuid);
 
         if (queue == null) {
             Log.info("Queue {%s} removed, shut down monitor", uuid);
             monitor.shutDown();
             entries.remove();
+        } else if (this.hasQueueChanged(monitor, queue)) {
+            Log.info("Queue {%s} changed, create new monitor", uuid);
+            monitor = this.factory.createMonitor(monitor, queue);
+            entry.setValue(monitor).shutDown();
+        }
 
-        } else if (monitor.isShutDown()) {
+        if (queue != null && monitor.isShutDown()) {
             Log.info("Monitor for queue {%s} is shut down, restart", uuid);
             this.executor.execute(monitor);
-
         }
+    }
+
+    private boolean hasQueueChanged(final SQSQueueMonitor monitor, final SQSQueue queue) {
+        final SQSQueue current = monitor.getQueue();
+
+        if (!StringUtils.equals(current.getUrl(), queue.getUrl())) {
+            return true;
+        }
+
+        if (!StringUtils.equals(current.getAWSAccessKeyId(), queue.getAWSAccessKeyId())) {
+            return true;
+        }
+
+        if (!StringUtils.equals(current.getAWSSecretKey(), queue.getAWSSecretKey())) {
+            return true;
+        }
+
+        if (current.getMaxNumberOfMessages() != queue.getMaxNumberOfMessages()) {
+            return true;
+        }
+
+        if (current.getWaitTimeSeconds() != queue.getWaitTimeSeconds()) {
+            return true;
+        }
+
+        return false;
     }
 }
