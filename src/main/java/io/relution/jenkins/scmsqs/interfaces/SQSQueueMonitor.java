@@ -18,6 +18,8 @@ package io.relution.jenkins.scmsqs.interfaces;
 
 import com.amazonaws.services.sqs.model.Message;
 
+import io.relution.jenkins.scmsqs.net.SQSChannel;
+
 
 /**
  * Interface definition for classes that can be used to monitor an Amazon {@link SQSQueue} for new
@@ -63,4 +65,16 @@ public interface SQSQueueMonitor extends Runnable {
      * @return {@code true} if the monitor is stopped; otherwise, {@code false}.
      */
     boolean isShutDown();
+
+    /**
+     * Returns the SQS queue this monitor is associated with.
+     * @return The {@link SQSQueue} this monitor is associated with.
+     */
+    SQSQueue getQueue();
+
+    /**
+     * Returns the SQS channel this monitor is associated with.
+     * @return The {@link SQSChannel} this monitor is associated with.
+     */
+    SQSChannel getChannel();
 }
