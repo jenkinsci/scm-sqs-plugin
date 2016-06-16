@@ -284,8 +284,8 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.verify(this.factory).createMonitor(this.monitorA, queueA_);
         Mockito.verify(this.monitorA).getQueue();
         Mockito.verify(this.monitorA).shutDown();
+        Mockito.verify(this.monitorA).isShutDown();
         Mockito.verifyNoMoreInteractions(this.monitorA);
-        Mockito.verify(monitorA_).isShutDown();
         Mockito.verifyNoMoreInteractions(monitorA_);
     }
 

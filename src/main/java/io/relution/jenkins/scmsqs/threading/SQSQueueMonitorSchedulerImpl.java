@@ -134,14 +134,10 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
             Log.info("Queue {%s} removed, shut down monitor", uuid);
             monitor.shutDown();
             entries.remove();
-        } else if (this.hasQueueChanged(monitor, queue)) {
-            Log.info("Queue {%s} changed, create new monitor", uuid);
+        } else if (monitor.isShutDown() || this.hasQueueChanged(monitor, queue)) {
+            Log.info("Queue {%s} changed or monitor stopped, create new monitor", uuid);
             monitor = this.factory.createMonitor(monitor, queue);
             entry.setValue(monitor).shutDown();
-        }
-
-        if (queue != null && monitor.isShutDown()) {
-            Log.info("Monitor for queue {%s} is shut down, restart", uuid);
             this.executor.execute(monitor);
         }
     }
