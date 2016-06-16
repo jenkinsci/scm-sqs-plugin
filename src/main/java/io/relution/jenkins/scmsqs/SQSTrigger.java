@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
@@ -48,6 +49,7 @@ import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import hudson.util.SequentialExecutionQueue;
 import io.relution.jenkins.scmsqs.i18n.sqstrigger.Messages;
 import io.relution.jenkins.scmsqs.interfaces.Event;
 import io.relution.jenkins.scmsqs.interfaces.EventTriggerMatcher;
@@ -81,9 +83,17 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     @Override
     public void start(final AbstractProject<?, ?> project, final boolean newInstance) {
-        Log.info("Start trigger for project %s", project);
-        this.getScheduler().register(this);
         super.start(project, newInstance);
+
+        final DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        descriptor.queue.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                Log.info("Start trigger for project %s", project);
+                SQSTrigger.this.getScheduler().register(SQSTrigger.this);
+            }
+        });
     }
 
     @Override
@@ -94,9 +104,17 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
 
     @Override
     public void stop() {
-        Log.info("Stop trigger (%s)", this);
-        this.getScheduler().unregister(this);
         super.stop();
+
+        final DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        descriptor.queue.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                Log.info("Stop trigger (%s)", this);
+                SQSTrigger.this.getScheduler().unregister(SQSTrigger.this);
+            }
+        });
     }
 
     @Override
@@ -225,6 +243,8 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         private volatile transient SQSQueueMonitorScheduler     scheduler;
 
         private transient boolean                               isLoaded;
+
+        private transient final SequentialExecutionQueue        queue          = new SequentialExecutionQueue(Executors.newSingleThreadExecutor());
 
         public static DescriptorImpl get() {
             final DescriptorExtensionList<Trigger<?>, TriggerDescriptor> triggers = Trigger.all();
