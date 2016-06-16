@@ -15,6 +15,7 @@ To use this plugin you will need to have the following:
 1. [Using the plugin](#using-the-plugin)
     1. [Install the plugin](#install-the-plugin-on-jenkins)
     2. [Set up AWS users](#create-a-jenkins-user-on-aws)
+    3. [Create a repository](#create-a-codecommit-repository)
     3. [Create an SQS queue](#create-an-sqs-queue-on-aws)
     4. [Test access to the queue](#test-whether-jenkins-can-access-the-queue)
     5. [Create an SNS topic](#create-an-sns-topic-on-aws)
@@ -62,6 +63,42 @@ After you've successfully installed the plugin you should see a new entry in you
 8. **Create** a new **Access Key** for the Jenins user
 
     **Important:** You will need the `Access Key ID` and `Secret Key` for Jenkins to be able to access the SQS queue. Make sure to save both values in a secure place.
+
+###Create a CodeCommit repository
+
+Before you start to configure the plugin you should have at least one Git repository on CodeCommit. If you do not already have a repository follow the steps below to create one.
+
+**Note:** At the time of writing CodeCommit is only available in the [**US East (N. Virginia)** region](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/). AWS will automatically switch to that region when you access CodeCommit. All services (CodeCommit, SNS, SQS) must be created in the same region, so do not switch regions after you've created the repository.
+
+1. Go to `Services > Developer Tools > CodeCommit`
+
+2. **Create** a **new repository**
+
+3. Enter a name and description for the repository
+
+At the very least you'll need to enter a new name for the repository. For this plugin we would use something like *scm-sqs-plugin*. To be able to work with repositories your user account also needs permission to access CodeCommit:
+
+1. Go to `Services > Security & Identity > IAM`
+
+2. Find and open your user account
+
+3. Go to `Permissions`
+
+4. Click on `Attach Policy`
+
+5. Find the developer policy for your Git repository
+
+When you create a repository AWS will automatically create a policy for it. In the example above the policy would be named *scm-sqs-plugin-developer*. Alternatively you could assign the policy *AmazonSQSFullAccess* which will automatically give your user access to all repositories on CodeCommit.
+
+In addition to the policy your account also needs a public SSH key assigned. Access to repositories on CodeCommit is only possible via SSH.
+
+1. Switch to the tab `Security Credentials`
+
+2. `Upload` an `SSH public key`
+
+3. You will need the `SSH Key ID` to access the repository
+
+You should now be able to clone the repository and start working with it. The repository URL for our example would be *ssh://`ssh-key-id`@git-codecommit.us-east-1.amazonaws.com/v1/repos/scm_sqs_plugin*
 
 ###Create an SQS queue on AWS
 
