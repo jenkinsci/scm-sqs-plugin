@@ -22,7 +22,6 @@ import com.google.inject.Injector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-import hudson.Extension;
 import io.relution.jenkins.scmsqs.factories.ExecutorFactoryImpl;
 import io.relution.jenkins.scmsqs.factories.MessageParserFactoryImpl;
 import io.relution.jenkins.scmsqs.factories.SQSFactoryImpl;
@@ -42,7 +41,6 @@ import io.relution.jenkins.scmsqs.threading.ExecutorProviderImpl;
 import io.relution.jenkins.scmsqs.threading.SQSQueueMonitorSchedulerImpl;
 
 
-@Extension
 public class Context extends com.google.inject.AbstractModule {
 
     private static Injector injector;
