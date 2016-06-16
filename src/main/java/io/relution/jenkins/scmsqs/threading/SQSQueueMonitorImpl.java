@@ -72,7 +72,6 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
         this.channel = channel;
 
         this.listeners = listeners;
-        this.isShutDown = isShutDown;
     }
 
     @Override
