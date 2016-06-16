@@ -102,6 +102,8 @@ You should now be able to clone the repository and start working with it. The re
 
 ###Create an SQS queue on AWS
 
+**Note:** The SQS queue must be created in the same region as your CodeCommit repository. At the time of writing CodeCommit is only available in the **US East (N. Virginia)** region. This means the SQS queue must also be created in the US East region.
+
 1. Go to `Services > Application Services > SQS`
 
 2. **Create** a **new queue**
@@ -131,6 +133,8 @@ You should see a success message as in the screenshot below. If you get an error
 ![Jenkins configuration test](doc/images/plugin-queue-configuration-success.png)
 
 ###Create an SNS topic on AWS
+
+**Note:** The SNS topic must be created in the same region as your CodeCommit repository. At the time of writing CodeCommit is only available in the **US East (N. Virginia)** region. This means the SNS topic must also be created in the US East region.
 
 1. Go to `Services > Mobile Services > SNS`
 2. Go to `Topics`
