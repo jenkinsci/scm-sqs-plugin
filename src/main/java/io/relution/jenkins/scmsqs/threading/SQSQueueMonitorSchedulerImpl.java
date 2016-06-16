@@ -147,28 +147,35 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
     }
 
     private boolean hasQueueChanged(final SQSQueueMonitor monitor, final SQSQueue queue) {
-        final SQSQueue current = monitor.getQueue();
+        try {
+            final SQSQueue current = monitor.getQueue();
 
-        if (!StringUtils.equals(current.getUrl(), queue.getUrl())) {
-            return true;
+            if (!StringUtils.equals(current.getUrl(), queue.getUrl())) {
+                return true;
+            }
+
+            if (!StringUtils.equals(current.getAWSAccessKeyId(), queue.getAWSAccessKeyId())) {
+                return true;
+            }
+
+            if (!StringUtils.equals(current.getAWSSecretKey(), queue.getAWSSecretKey())) {
+                return true;
+            }
+
+            if (current.getMaxNumberOfMessages() != queue.getMaxNumberOfMessages()) {
+                return true;
+            }
+
+            if (current.getWaitTimeSeconds() != queue.getWaitTimeSeconds()) {
+                return true;
+            }
+
+            return false;
+        } catch (final com.amazonaws.AmazonServiceException e) {
+            Log.warning("Cannot compare queues: %s", e.getMessage());
+        } catch (final Exception e) {
+            Log.severe(e, "Cannot compare queues, unknown error");
         }
-
-        if (!StringUtils.equals(current.getAWSAccessKeyId(), queue.getAWSAccessKeyId())) {
-            return true;
-        }
-
-        if (!StringUtils.equals(current.getAWSSecretKey(), queue.getAWSSecretKey())) {
-            return true;
-        }
-
-        if (current.getMaxNumberOfMessages() != queue.getMaxNumberOfMessages()) {
-            return true;
-        }
-
-        if (current.getWaitTimeSeconds() != queue.getWaitTimeSeconds()) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 }
