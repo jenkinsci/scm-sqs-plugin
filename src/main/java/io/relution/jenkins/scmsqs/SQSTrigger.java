@@ -59,6 +59,8 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueue;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
+import io.relution.jenkins.scmsqs.model.events.EventBroker;
 
 
 public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQueueListener, Runnable {
@@ -240,8 +242,6 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
         private volatile List<SQSTriggerQueue>                  sqsQueues;
 
         private volatile transient Map<String, SQSTriggerQueue> sqsQueueMap;
-        private volatile transient SQSQueueMonitorScheduler     scheduler;
-
         private transient boolean                               isLoaded;
 
         private transient final SequentialExecutionQueue        queue          = new SequentialExecutionQueue(Executors.newSingleThreadExecutor());
@@ -309,7 +309,7 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
             this.initQueueMap();
             this.save();
 
-            this.scheduler.onConfigurationChanged();
+            EventBroker.getInstance().post(new ConfigurationChangedEvent());
             return true;
         }
 
@@ -331,18 +331,6 @@ public class SQSTrigger extends Trigger<AbstractProject<?, ?>> implements SQSQue
                 return null;
             }
             return this.sqsQueueMap.get(uuid);
-        }
-
-        @Inject
-        public void setScheduler(final SQSQueueMonitorScheduler sQSQueueMonitorScheduler) {
-            this.scheduler = sQSQueueMonitorScheduler;
-        }
-
-        public SQSQueueMonitorScheduler getScheduler() {
-            if (this.scheduler == null) {
-                Context.injector().injectMembers(this);
-            }
-            return this.scheduler;
         }
 
         private void initQueueMap() {

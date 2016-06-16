@@ -35,6 +35,7 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueListener;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
 
 
 public class SQSQueueMonitorSchedulerImplTest {
@@ -238,7 +239,7 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.verify(this.monitorA, times(1)).add(this.listenerA1);
         Mockito.verify(this.monitorB, times(1)).add(this.listenerB1);
 
-        this.scheduler.onConfigurationChanged();
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
 
         Mockito.verifyNoMoreInteractions(this.factory);
         Mockito.verify(this.monitorA).isShutDown();
@@ -257,7 +258,7 @@ public class SQSQueueMonitorSchedulerImplTest {
         Mockito.verify(this.monitorB, times(1)).add(this.listenerB1);
         Mockito.when(this.provider.getSqsQueue(UUID_B)).thenReturn(null);
 
-        this.scheduler.onConfigurationChanged();
+        this.scheduler.onConfigurationChanged(new ConfigurationChangedEvent());
 
         Mockito.verifyNoMoreInteractions(this.factory);
         Mockito.verify(this.monitorA).isShutDown();

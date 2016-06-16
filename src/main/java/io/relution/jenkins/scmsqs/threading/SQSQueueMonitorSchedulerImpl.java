@@ -16,6 +16,7 @@
 
 package io.relution.jenkins.scmsqs.threading;
 
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 
 import java.util.HashMap;
@@ -31,6 +32,8 @@ import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitor;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueMonitorScheduler;
 import io.relution.jenkins.scmsqs.interfaces.SQSQueueProvider;
 import io.relution.jenkins.scmsqs.logging.Log;
+import io.relution.jenkins.scmsqs.model.events.ConfigurationChangedEvent;
+import io.relution.jenkins.scmsqs.model.events.EventBroker;
 import io.relution.jenkins.scmsqs.util.ThrowIf;
 
 
@@ -47,6 +50,8 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         this.executor = executor;
         this.provider = provider;
         this.factory = factory;
+
+        EventBroker.getInstance().register(this);
     }
 
     @Override
@@ -94,8 +99,8 @@ public class SQSQueueMonitorSchedulerImpl implements SQSQueueMonitorScheduler {
         return true;
     }
 
-    @Override
-    public synchronized void onConfigurationChanged() {
+    @Subscribe
+    public synchronized void onConfigurationChanged(final ConfigurationChangedEvent event) {
         final Iterator<Entry<String, SQSQueueMonitor>> entries = this.monitors.entrySet().iterator();
 
         while (entries.hasNext()) {
