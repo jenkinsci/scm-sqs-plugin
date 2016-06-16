@@ -52,6 +52,7 @@ public interface SQSQueueMonitorScheduler {
     /**
      * Notifies the scheduler that the global configuration was changed. It should shut down all
      * monitors for which the associated queue configuration was removed.
+     * @param event The configuration changed event.
      */
     @Subscribe
     void onConfigurationChanged(ConfigurationChangedEvent event);
