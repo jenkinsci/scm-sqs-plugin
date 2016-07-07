@@ -61,8 +61,7 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     private SQSQueueMonitorImpl(final ExecutorService executor,
             final SQSQueue queue,
             final SQSChannel channel,
-            final List<SQSQueueListener> listeners,
-            final boolean isShutDown) {
+            final List<SQSQueueListener> listeners) {
         ThrowIf.isNull(executor, "executor");
         ThrowIf.isNull(channel, "channel");
 
@@ -77,7 +76,7 @@ public class SQSQueueMonitorImpl implements SQSQueueMonitor {
     @Override
     public SQSQueueMonitor clone(final SQSQueue queue, final SQSChannel channel) {
         synchronized (this.listenersLock) {
-            return new SQSQueueMonitorImpl(this.executor, queue, channel, this.listeners, this.isShutDown);
+            return new SQSQueueMonitorImpl(this.executor, queue, channel, this.listeners);
         }
     }
 
