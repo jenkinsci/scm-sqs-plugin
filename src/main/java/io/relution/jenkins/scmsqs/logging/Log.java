@@ -28,13 +28,19 @@ public class Log {
         LOGGER = Logger.getLogger(Log.class.getName());
     }
 
+    private static String format(final String message, final Object... args) {
+        final String formatted = String.format(message, args);
+        final long id = Thread.currentThread().getId();
+        return String.format("%06X %s", id, formatted);
+    }
+
     private static void write(final Level level, final String message, final Object... args) {
-        final String msg = String.format(message, args);
+        final String msg = format(message, args);
         LOGGER.log(level, msg);
     }
 
     private static void write(final Level level, final Throwable thrown, final String message, final Object... args) {
-        final String msg = String.format(message, args);
+        final String msg = format(message, args);
         LOGGER.log(level, msg, thrown);
     }
 
